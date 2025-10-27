@@ -1,8 +1,29 @@
+import * as ImagePicker from 'expo-image-picker';
 import React, { useEffect, useState } from 'react';
-import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, View } from 'react-native';
-import { Button, HelperText, TextInput, useTheme } from 'react-native-paper';
+import {
+  Image,
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
+  StyleSheet,
+  View
+} from 'react-native';
+import {
+  Button,
+  Chip,
+  HelperText,
+  IconButton,
+  TextInput,
+  useTheme,
+} from 'react-native-paper';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { v4 as uuidv4 } from 'uuid';
+import {
+  compressImage,
+  deleteEncryptedImage,
+  loadEncryptedImage,
+  saveEncryptedImage,
+} from '../../services/imageService';
 import { getJournal, saveJournal } from '../../services/storageService';
 import { useAppDispatch } from '../../stores/hooks';
 import { addJournal, updateJournal } from '../../stores/slices/journalsSlice';
@@ -23,6 +44,8 @@ const JournalEditorScreen: React.FC<{ navigation: any; route: any }> = ({
 
   const [title, setTitle] = useState('');
   const [text, setText] = useState('');
+  const [images, setImages] = useState<string[]>([]);
+  const [decryptedImages, setDecryptedImages] = useState<string[]>([]);
   const [isSaving, setIsSaving] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
@@ -33,11 +56,18 @@ const JournalEditorScreen: React.FC<{ navigation: any; route: any }> = ({
   }, [journalId]);
 
   useEffect(() => {
-    // Set up auto-save on back button
-    navigation.setOptions({
-      headerLeft: () => null, // We'll handle back ourselves
-    });
-  }, [navigation]);
+    requestPermissions();
+  }, []);
+
+  const requestPermissions = async () => {
+    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (status !== 'granted') {
+      Alert.alert(
+        'Permission Required',
+        'Please grant photo library access to attach images'
+      );
+    }
+  };
 
   const loadJournal = async () => {
     if (!encryptionKey) return;
@@ -48,12 +78,103 @@ const JournalEditorScreen: React.FC<{ navigation: any; route: any }> = ({
       if (journal) {
         setTitle(journal.title || '');
         setText(journal.text);
+        
+        // Load encrypted images
+        if (journal.images && journal.images.length > 0) {
+          setImages(journal.images);
+          // Decrypt images for display
+          const decrypted = await Promise.all(
+            journal.images.map(img => loadEncryptedImage(img, encryptionKey))
+          );
+          setDecryptedImages(decrypted);
+        }
       }
     } catch (error) {
       console.error('Error loading journal:', error);
       Alert.alert('Error', 'Failed to load journal entry');
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const pickImage = async () => {
+    try {
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        allowsMultipleSelection: false,
+        quality: 1,
+      });
+
+      if (!result.canceled && result.assets[0]) {
+        await addImage(result.assets[0].uri);
+      }
+    } catch (error) {
+      console.error('Error picking image:', error);
+      Alert.alert('Error', 'Failed to pick image');
+    }
+  };
+
+  const takePhoto = async () => {
+    try {
+      const { status } = await ImagePicker.requestCameraPermissionsAsync();
+      if (status !== 'granted') {
+        Alert.alert('Permission Required', 'Camera access is required');
+        return;
+      }
+
+      const result = await ImagePicker.launchCameraAsync({
+        quality: 1,
+        allowsEditing: true,
+      });
+
+      if (!result.canceled && result.assets[0]) {
+        await addImage(result.assets[0].uri);
+      }
+    } catch (error) {
+      console.error('Error taking photo:', error);
+      Alert.alert('Error', 'Failed to take photo');
+    }
+  };
+
+  const addImage = async (uri: string) => {
+    if (!encryptionKey) return;
+
+    try {
+      // Compress image
+      const compressed = await compressImage(uri);
+
+      // Encrypt and save
+      const imageName = `img_${Date.now()}_${uuidv4()}`;
+      const encryptedPath = await saveEncryptedImage(
+        compressed,
+        imageName,
+        encryptionKey
+      );
+
+      // Update state
+      setImages([...images, encryptedPath]);
+      setDecryptedImages([...decryptedImages, compressed]);
+    } catch (error) {
+      console.error('Error adding image:', error);
+      Alert.alert('Error', 'Failed to add image');
+    }
+  };
+
+  const removeImage = async (index: number) => {
+    try {
+      const imageToRemove = images[index];
+      
+      // Delete encrypted file
+      if (imageToRemove) {
+        await deleteEncryptedImage(imageToRemove);
+      }
+
+      // Update state
+      setImages(images.filter((_, i) => i !== index));
+      setDecryptedImages(decryptedImages.filter((_, i) => i !== index));
+    } catch (error) {
+      console.error('Error removing image:', error);
+      Alert.alert('Error', 'Failed to remove image');
     }
   };
 
@@ -72,22 +193,25 @@ const JournalEditorScreen: React.FC<{ navigation: any; route: any }> = ({
 
     try {
       const now = new Date().toISOString();
-      
+      let existingJournal: Journal | null = null;
+
+      if (journalId) {
+        existingJournal = await getJournal(journalId, encryptionKey);
+      }
+
       const journal: Journal = {
         id: journalId || uuidv4(),
-        date: journalId ? (await getJournal(journalId, encryptionKey))?.date || now : now,
-        createdAt: journalId ? (await getJournal(journalId, encryptionKey))?.createdAt || now : now,
+        date: existingJournal?.date || now,
+        createdAt: existingJournal?.createdAt || now,
         updatedAt: now,
         title: title.trim() || undefined,
         text: text.trim(),
-        mood: undefined, // Will add mood selector later
-        images: undefined, // Will add in Sprint 4
+        mood: undefined,
+        images: images.length > 0 ? images : undefined,
       };
 
-      // Save to encrypted storage
       await saveJournal(journal, encryptionKey);
 
-      // Update Redux state
       if (isEditing) {
         dispatch(updateJournal(journal));
       } else {
@@ -99,7 +223,7 @@ const JournalEditorScreen: React.FC<{ navigation: any; route: any }> = ({
           { text: 'OK', onPress: () => navigation.goBack() },
         ]);
       }
-      
+
       return true;
     } catch (error) {
       console.error('Error saving journal:', error);
@@ -111,7 +235,6 @@ const JournalEditorScreen: React.FC<{ navigation: any; route: any }> = ({
   };
 
   const handleBack = async () => {
-    // Auto-save if there's content
     if (text.trim()) {
       const saved = await handleSave(false);
       if (saved) {
@@ -158,10 +281,48 @@ const JournalEditorScreen: React.FC<{ navigation: any; route: any }> = ({
             onChangeText={setText}
             mode="outlined"
             multiline
-            numberOfLines={20}
+            numberOfLines={15}
             style={styles.textInput}
             placeholder="Start writing..."
           />
+
+          {/* Image Picker Buttons */}
+          <View style={styles.imageButtonsContainer}>
+            <Chip
+              icon="image"
+              onPress={pickImage}
+              style={styles.imageButton}
+              mode="outlined"
+            >
+              Add Photo
+            </Chip>
+            <Chip
+              icon="camera"
+              onPress={takePhoto}
+              style={styles.imageButton}
+              mode="outlined"
+            >
+              Take Photo
+            </Chip>
+          </View>
+
+          {/* Image Preview Grid */}
+          {decryptedImages.length > 0 && (
+            <View style={styles.imagesGrid}>
+              {decryptedImages.map((uri, index) => (
+                <View key={index} style={styles.imageContainer}>
+                  <Image source={{ uri }} style={styles.imagePreview} />
+                  <IconButton
+                    icon="close-circle"
+                    size={24}
+                    onPress={() => removeImage(index)}
+                    style={styles.removeButton}
+                    iconColor={theme.colors.error}
+                  />
+                </View>
+              ))}
+            </View>
+          )}
 
           <View style={styles.buttonContainer}>
             <Button
@@ -172,7 +333,7 @@ const JournalEditorScreen: React.FC<{ navigation: any; route: any }> = ({
             >
               Back
             </Button>
-            
+
             <Button
               mode="contained"
               onPress={() => handleSave(true)}
@@ -209,7 +370,35 @@ const styles = StyleSheet.create({
   },
   textInput: {
     marginBottom: 16,
-    minHeight: 300,
+    minHeight: 200,
+  },
+  imageButtonsContainer: {
+    flexDirection: 'row',
+    marginBottom: 16,
+  },
+  imageButton: {
+    marginRight: 8,
+  },
+  imagesGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    marginBottom: 16,
+  },
+  imageContainer: {
+    position: 'relative',
+    margin: 4,
+  },
+  imagePreview: {
+    width: 100,
+    height: 100,
+    borderRadius: 8,
+  },
+  removeButton: {
+    position: 'absolute',
+    top: -8,
+    right: -8,
+    backgroundColor: 'white',
+    borderRadius: 12,
   },
   buttonContainer: {
     flexDirection: 'row',
