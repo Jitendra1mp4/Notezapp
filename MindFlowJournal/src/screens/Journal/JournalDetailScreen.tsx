@@ -1,14 +1,32 @@
 import { format } from 'date-fns';
 import React, { useEffect, useState } from 'react';
-import { ScrollView, StyleSheet, View } from 'react-native';
-import { Button, Chip, Divider, Text, useTheme } from 'react-native-paper';
+import {
+  Dimensions,
+  Image,
+  Modal,
+  ScrollView,
+  StyleSheet,
+  TouchableOpacity,
+  View,
+} from 'react-native';
+import {
+  Button,
+  Chip,
+  Divider,
+  IconButton,
+  Text,
+  useTheme,
+} from 'react-native-paper';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { deleteEncryptedImage, loadEncryptedImage } from '../../services/imageService';
 import { deleteJournal, getJournal } from '../../services/storageService';
 import { useAppDispatch } from '../../stores/hooks';
 import { deleteJournal as deleteJournalAction } from '../../stores/slices/journalsSlice';
 import { Journal } from '../../types';
 import { Alert } from '../../utils/alert';
 import { useAuth } from '../../utils/authContext';
+
+const { width: screenWidth } = Dimensions.get('window');
 
 const JournalDetailScreen: React.FC<{ navigation: any; route: any }> = ({
   navigation,
@@ -20,6 +38,8 @@ const JournalDetailScreen: React.FC<{ navigation: any; route: any }> = ({
 
   const { journalId } = route.params;
   const [journal, setJournal] = useState<Journal | null>(null);
+  const [decryptedImages, setDecryptedImages] = useState<string[]>([]);
+  const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isDeleting, setIsDeleting] = useState(false);
 
@@ -34,6 +54,14 @@ const JournalDetailScreen: React.FC<{ navigation: any; route: any }> = ({
     try {
       const loadedJournal = await getJournal(journalId, encryptionKey);
       setJournal(loadedJournal);
+
+      // Decrypt images if present
+      if (loadedJournal?.images && loadedJournal.images.length > 0) {
+        const decrypted = await Promise.all(
+          loadedJournal.images.map(img => loadEncryptedImage(img, encryptionKey))
+        );
+        setDecryptedImages(decrypted);
+      }
     } catch (error) {
       console.error('Error loading journal:', error);
       Alert.alert('Error', 'Failed to load journal entry');
@@ -62,9 +90,16 @@ const JournalDetailScreen: React.FC<{ navigation: any; route: any }> = ({
 
     setIsDeleting(true);
     try {
+      // Delete associated images
+      if (journal?.images) {
+        await Promise.all(
+          journal.images.map(img => deleteEncryptedImage(img))
+        );
+      }
+
       await deleteJournal(journalId, encryptionKey);
       dispatch(deleteJournalAction(journalId));
-      
+
       Alert.alert('Deleted', 'Journal entry has been deleted', [
         { text: 'OK', onPress: () => navigation.goBack() },
       ]);
@@ -129,6 +164,22 @@ const JournalDetailScreen: React.FC<{ navigation: any; route: any }> = ({
 
         <Divider style={styles.divider} />
 
+        {/* Images Gallery */}
+        {decryptedImages.length > 0 && (
+          <View style={styles.imagesContainer}>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+              {decryptedImages.map((uri, index) => (
+                <TouchableOpacity
+                  key={index}
+                  onPress={() => setSelectedImage(uri)}
+                >
+                  <Image source={{ uri }} style={styles.thumbnail} />
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
+          </View>
+        )}
+
         <Text variant="bodyLarge" style={styles.text}>
           {journal.text}
         </Text>
@@ -167,6 +218,30 @@ const JournalDetailScreen: React.FC<{ navigation: any; route: any }> = ({
           </Button>
         </View>
       </ScrollView>
+
+      {/* Full Screen Image Modal */}
+      <Modal
+        visible={!!selectedImage}
+        transparent
+        onRequestClose={() => setSelectedImage(null)}
+      >
+        <View style={styles.modalContainer}>
+          <IconButton
+            icon="close"
+            size={30}
+            onPress={() => setSelectedImage(null)}
+            style={styles.closeButton}
+            iconColor="white"
+          />
+          {selectedImage && (
+            <Image
+              source={{ uri: selectedImage }}
+              style={styles.fullImage}
+              resizeMode="contain"
+            />
+          )}
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 };
@@ -199,6 +274,15 @@ const styles = StyleSheet.create({
   divider: {
     marginVertical: 16,
   },
+  imagesContainer: {
+    marginBottom: 16,
+  },
+  thumbnail: {
+    width: 120,
+    height: 120,
+    borderRadius: 8,
+    marginRight: 8,
+  },
   text: {
     marginBottom: 24,
     lineHeight: 24,
@@ -218,6 +302,22 @@ const styles = StyleSheet.create({
   actionButton: {
     flex: 1,
     marginHorizontal: 4,
+  },
+  modalContainer: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.9)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  closeButton: {
+    position: 'absolute',
+    top: 40,
+    right: 20,
+    zIndex: 1,
+  },
+  fullImage: {
+    width: screenWidth,
+    height: '100%',
   },
 });
 
