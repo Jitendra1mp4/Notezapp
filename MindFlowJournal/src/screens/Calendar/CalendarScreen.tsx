@@ -212,25 +212,26 @@ const loadJournalsForDate = (dateKey: string) => {
 
       {/* Selected Date Section */}
       <View style={styles.selectedDateSection}>
-        <View style={styles.selectedDateHeader}>
-          <View>
-            <Text variant="titleLarge" style={styles.selectedDateTitle}>
-              {selectedDateFormatted}
-            </Text>
-            <Text variant="bodySmall" style={styles.entryCount}>
-              {journalsForSelectedDate.length}{' '}
-              {journalsForSelectedDate.length === 1 ? 'entry' : 'entries'}
-            </Text>
-          </View>
-          <Button
-            mode="contained"
-            icon="plus"
-            onPress={handleCreateJournal}
-            compact
-          >
-            New Entry
-          </Button>
+       <View style={styles.selectedDateHeader}>
+        <View style={{ flex: 1, marginRight: 8 }}>
+          <Text variant="titleLarge" style={styles.selectedDateTitle}>
+            {selectedDateFormatted}
+          </Text>
+          <Text variant="bodySmall" style={styles.entryCount}>
+            {journalsForSelectedDate.length}{' '}
+            {journalsForSelectedDate.length === 1 ? 'entry' : 'entries'}
+          </Text>
         </View>
+        <Button
+          mode="contained"
+          icon="plus"
+          onPress={handleCreateJournal}
+          compact
+        >
+          New Entry
+        </Button>
+      </View>
+
 
         <Divider style={styles.divider} />
 
