@@ -67,39 +67,45 @@ const JournalListScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
     return colors[index % colors.length];
   };
 
-  const renderJournalItem = ({ item, index }: { item: Journal; index: number }) => {
-    const dateObj = new Date(item.date);
-    const formattedDate = format(dateObj, 'MMM dd, yyyy');
-    const formattedTime = format(dateObj, 'hh:mm a');
+const renderJournalItem = ({ item, index }: { item: Journal; index: number }) => {
+  const dateObj = new Date(item.date);
+  const formattedDate = format(dateObj, 'MMM dd, yyyy');
+  const formattedTime = format(dateObj, 'hh:mm a');
+  const hasImages = item.images && item.images.length > 0;
 
-    return (
-      <Card
-        style={[styles.journalCard, { backgroundColor: getCardColor(index) }]}
-        onPress={() =>
-          navigation.navigate('JournalDetail', { journalId: item.id })
-        }
-      >
-        <Card.Content>
-          {item.title && (
-            <Text variant="titleMedium" style={styles.title}>
-              {item.title}
-            </Text>
-          )}
-          <View style={styles.dateContainer}>
-            <Chip icon="calendar" compact>
-              {formattedDate}
-            </Chip>
-            <Chip icon="clock-outline" compact style={styles.timeChip}>
-              {formattedTime}
-            </Chip>
-          </View>
-          <Text variant="bodyMedium" numberOfLines={3} style={styles.preview}>
-            {item.text}
+  return (
+    <Card
+      style={[styles.journalCard, { backgroundColor: getCardColor(index) }]}
+      onPress={() =>
+        navigation.navigate('JournalDetail', { journalId: item.id })
+      }
+    >
+      <Card.Content>
+        {item.title && (
+          <Text variant="titleMedium" style={styles.title}>
+            {item.title}
           </Text>
-        </Card.Content>
-      </Card>
-    );
-  };
+        )}
+        <View style={styles.dateContainer}>
+          <Chip icon="calendar" compact>
+            {formattedDate}
+          </Chip>
+          <Chip icon="clock-outline" compact style={styles.timeChip}>
+            {formattedTime}
+          </Chip>
+          {hasImages && (
+            <Chip icon="image" compact style={styles.imageChip}>
+              {item.images!.length}
+            </Chip>
+          )}
+        </View>
+        <Text variant="bodyMedium" numberOfLines={3} style={styles.preview}>
+          {item.text}
+        </Text>
+      </Card.Content>
+    </Card>
+  );
+};
 
   return (
     <SafeAreaView
@@ -198,6 +204,10 @@ const styles = StyleSheet.create({
     right: 0,
     bottom: 0,
   },
+  imageChip: {
+  marginLeft: 8,
+},
+
 });
 
 export default JournalListScreen;
