@@ -37,6 +37,11 @@
           "dark": {
             "backgroundColor": "#000000"
           }
+        },
+         "expo-image-picker",
+        {
+          "photosPermission": "The app accesses your photos to let you attach images to journal entries.",
+          "cameraPermission": "The app accesses your camera to let you take photos for journal entries."
         }
       ]
     ],

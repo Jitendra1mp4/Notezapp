@@ -136,21 +136,32 @@ const JournalEditorScreen: React.FC<{ navigation: any; route: any }> = ({
     }
   };
 
-  const addImage = async (uri: string) => {
-    try {
-      // Compress image
-      const compressed = await compressImage(uri);
+const addImage = async (uri: string) => {
+  // Limit to 5 images per journal
+  // if (imageBase64List.length >= 5) {
+  //   Alert.alert('Limit Reached', 'You can add up to 5 images per journal');
+  //   return;
+  // }
 
-      // Convert to base64
-      const base64 = await imageUriToBase64(compressed);
+  try {
+    // Compress image with lower quality for smaller size
+    const compressed = await compressImage(uri, 1200, 1200, 0.7);
 
-      // Add to list
-      setImageBase64List([...imageBase64List, base64]);
-    } catch (error) {
-      console.error('Error adding image:', error);
-      Alert.alert('Error', 'Failed to add image');
-    }
-  };
+    // Convert to base64
+    const base64 = await imageUriToBase64(compressed);
+
+    // Check size (optional - for debugging)
+    const sizeInKB = (base64.length * 3) / 4 / 1024;
+    console.log(`Image size: ${sizeInKB.toFixed(2)} KB`);
+
+    // Add to list
+    setImageBase64List([...imageBase64List, base64]);
+  } catch (error) {
+    console.error('Error adding image:', error);
+    Alert.alert('Error', 'Failed to add image');
+  }
+};
+
 
   const removeImage = (index: number) => {
     setImageBase64List(imageBase64List.filter((_, i) => i !== index));
