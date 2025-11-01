@@ -1,8 +1,8 @@
+import { format, parseISO } from 'date-fns';
 import * as Print from 'expo-print';
 import * as Sharing from 'expo-sharing';
 import { Platform } from 'react-native';
 import { Journal } from '../types';
-import { format, parseISO } from 'date-fns';
 
 /**
  * Export journals as JSON

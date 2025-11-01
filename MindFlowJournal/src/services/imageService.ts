@@ -1,5 +1,5 @@
-import { Platform } from 'react-native';
 import * as ImageManipulator from 'expo-image-manipulator';
+import { Platform } from 'react-native';
 
 /**
  * Compress and resize image
@@ -48,7 +48,7 @@ export const imageUriToBase64 = async (uri: string): Promise<string> => {
     // For mobile
     const { default: FileSystem } = await import('expo-file-system');
     return await FileSystem.readAsStringAsync(uri, {
-      encoding: FileSystem.EncodingType.Base64,
+      encoding: "base64",
     });
   }
 };
