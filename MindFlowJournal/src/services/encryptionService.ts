@@ -1,6 +1,8 @@
 import CryptoJS from 'crypto-js';
+import 'react-native-get-random-values';
 
-const PBKDF2_ITERATIONS = 100000; // High iteration count for security
+// const PBKDF2_ITERATIONS = 100000; // High iteration count for security
+const PBKDF2_ITERATIONS = 1000; // High iteration count for security
 const KEY_SIZE = 256 / 32; // 256 bits = 8 words (32-bit)
 const SALT_SIZE = 128 / 8; // 128 bits = 16 bytes
 
@@ -14,8 +16,10 @@ export interface DerivedKey {
  */
 export const generateSalt = (): string => {
   const salt = CryptoJS.lib.WordArray.random(SALT_SIZE);
+  // return "jitendra kumar s"//salt.toString(CryptoJS.enc.Hex);
   return salt.toString(CryptoJS.enc.Hex);
 };
+
 
 /**
  * Derive an encryption key from a password using PBKDF2
