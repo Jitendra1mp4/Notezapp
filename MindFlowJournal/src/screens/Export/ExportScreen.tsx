@@ -1,27 +1,27 @@
+import { formatDate } from 'date-fns';
 import React, { useState } from 'react';
-import { View, StyleSheet, ScrollView } from 'react-native';
+import { ScrollView, StyleSheet, View } from 'react-native';
 import {
-  Text,
   Button,
-  useTheme,
   Card,
   Checkbox,
-  TextInput,
   Chip,
   ProgressBar,
+  Text,
+  TextInput,
+  useTheme,
 } from 'react-native-paper';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useAppSelector } from '../../stores/hooks';
-import { useAuth } from '../../utils/authContext';
 import {
-  exportAsJSON,
-  exportAsText,
-  exportAsPDF,
-  shareFile,
   downloadTextFile,
+  exportAsJSON,
+  exportAsPDF,
+  exportAsText,
+  shareFile,
 } from '../../services/exportService';
-import { format, parseISO } from 'date-fns';
+import { useAppSelector } from '../../stores/hooks';
 import { Alert } from '../../utils/alert';
+import { useAuth } from '../../utils/authContext';
 
 const ExportScreen: React.FC = () => {
   const theme = useTheme();
@@ -70,7 +70,7 @@ const ExportScreen: React.FC = () => {
     setIsExporting(true);
 
     try {
-      const timestamp = format(new Date(), 'yyyy-MM-dd-HHmmss');
+      const timestamp = formatDate(new Date(), 'yyyy-MM-dd-HHmmss');
       let filename = '';
       let content = '';
       let uri = '';
