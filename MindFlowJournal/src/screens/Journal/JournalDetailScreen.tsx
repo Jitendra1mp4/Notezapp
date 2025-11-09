@@ -18,7 +18,7 @@ import {
   useTheme,
 } from 'react-native-paper';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { base64ToDataUri, deleteEncryptedImage, loadEncryptedImage } from '../../services/imageService';
+import { base64ToDataUri, deleteEncryptedImage } from '../../services/imageService';
 import { deleteJournal, getJournal } from '../../services/storageService';
 import { useAppDispatch } from '../../stores/hooks';
 import { deleteJournal as deleteJournalAction } from '../../stores/slices/journalsSlice';
@@ -93,10 +93,7 @@ const JournalDetailScreen: React.FC<{ navigation: any; route: any }> = ({
 
       await deleteJournal(journalId, encryptionKey);
       dispatch(deleteJournalAction(journalId));
-
-      Alert.alert('Deleted', 'Journal entry has been deleted', [
-        { text: 'OK', onPress: () => navigation.goBack() },
-      ]);
+        navigation.goBack() ;
     } catch (error) {
       console.error('Error deleting journal:', error);
       Alert.alert('Error', 'Failed to delete journal entry');
