@@ -151,7 +151,9 @@ const JournalEditorScreen: React.FC<{ navigation: any; route: any }> = ({
       return true;
     } catch (error) {
       console.error('Error saving journal:', error);
-      if (showAlert) Alert.alert('Error', 'Failed to save journal entry');
+      if (showAlert) {
+        Alert.alert('Oops!', 'Failed to save journal entry');
+      }
       return false;
     } finally {
       setIsSaving(false);
