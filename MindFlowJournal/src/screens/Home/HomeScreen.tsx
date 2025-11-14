@@ -1,13 +1,13 @@
-import React, { useEffect, useState } from 'react';
-import { View, StyleSheet, ScrollView, Animated } from 'react-native';
-import { Card, Text, Button, useTheme, Chip } from 'react-native-paper';
+import { format, subDays } from 'date-fns';
+import React, { useEffect } from 'react';
+import { Animated, ScrollView, StyleSheet, View } from 'react-native';
+import { Button, Card, Chip, Text, useTheme } from 'react-native-paper';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useAppSelector, useAppDispatch } from '../../stores/hooks';
-import { setJournals, setLongestStreak } from '../../stores/slices/journalsSlice'; // UPDATED
-import { useAuth } from '../../utils/authContext';
 import { listJournals } from '../../services/storageService';
 import { calculateLongestStreak } from '../../services/streakService'; // MAKE SURE THIS EXISTS
-import { format, subDays } from 'date-fns';
+import { useAppDispatch, useAppSelector } from '../../stores/hooks';
+import { setJournals, setLongestStreak } from '../../stores/slices/journalsSlice'; // UPDATED
+import { useAuth } from '../../utils/authContext';
 
 const HomeScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
   const theme = useTheme();
@@ -147,7 +147,7 @@ const HomeScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
             </Text>
             <Button
               mode="contained"
-              onPress={() => navigation.navigate('JournalEditor')}
+              onPress={() => navigation.navigate('JournalEditor', {})}
               style={styles.actionButton}
               icon="pencil"
             >
