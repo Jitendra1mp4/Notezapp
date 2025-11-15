@@ -1,30 +1,30 @@
-import React, { useState, useEffect } from 'react';
-import { View, StyleSheet, ScrollView } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import { ScrollView, StyleSheet, View } from 'react-native';
 import {
-  TextInput,
   Button,
-  Text,
-  useTheme,
   HelperText,
   ProgressBar,
+  Text,
+  TextInput,
+  useTheme,
 } from 'react-native-paper';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useAppDispatch } from '../../stores/hooks';
-import { setAuthenticated, setSalt } from '../../stores/slices/authSlice';
-import { useAuth } from '../../utils/authContext';
 import {
   deriveKeyFromPassword,
   verifyHash,
 } from '../../services/encryptionService';
 import {
   getSalt,
-  getSecurityQuestionsForRecovery,
   getSecurityAnswerHashes,
+  getSecurityQuestionsForRecovery,
+  reEncryptAllData,
   saveSalt,
   saveVerificationToken,
-  reEncryptAllData,
 } from '../../services/storageService';
+import { useAppDispatch } from '../../stores/hooks';
+import { setAuthenticated, setSalt } from '../../stores/slices/authSlice';
 import { Alert } from '../../utils/alert';
+import { useAuth } from '../../utils/authContext';
 
 const ForgotPasswordScreen: React.FC<{ navigation: any }> = ({
   navigation,
@@ -139,8 +139,12 @@ const ForgotPasswordScreen: React.FC<{ navigation: any }> = ({
   };
 
   const handleSetNewPassword = async () => {
-    if (!isPasswordValid || !passwordsMatch) {
-      Alert.alert('Error', 'Please enter a valid matching password');
+    if (!isPasswordValid ) {
+      Alert.alert('Oops!', 'Password must be of at least 8 character ');
+      return;
+    }
+    if (!passwordsMatch ) {
+      Alert.alert('Oops!', 'Password and Confirm Password didn\'t matched');
       return;
     }
 
