@@ -28,28 +28,33 @@
       "favicon": "./assets/images/favicon.png"
     },
     "plugins": [
-  "expo-router",
-  [
-    "expo-splash-screen",
-    {
-      "image": "./assets/images/splash-icon.png",
-      "imageWidth": 200,
-      "resizeMode": "contain",
-      "backgroundColor": "#ffffff",
-      "dark": {
-        "backgroundColor": "#000000"
-      }
-    }
-  ],
-  [
-    "expo-image-picker",
-    {
-      "photosPermission": "The app accesses your photos to let you attach images to journal entries.",
-      "cameraPermission": "The app accesses your camera to let you take photos for journal entries."
-    }
-  ]
-]
-,
+      "expo-router",
+      [
+        "expo-splash-screen",
+        {
+          "image": "./assets/images/splash-icon.png",
+          "imageWidth": 200,
+          "resizeMode": "contain",
+          "backgroundColor": "#ffffff",
+          "dark": {
+            "backgroundColor": "#000000"
+          }
+        }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "The app accesses your photos to let you attach images to journal entries.",
+          "cameraPermission": "The app accesses your camera to let you take photos for journal entries."
+        }
+      ],
+     [
+        "expo-sqlite",
+        {
+          "enableSQLCipher": true
+        }
+      ]
+    ],
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true

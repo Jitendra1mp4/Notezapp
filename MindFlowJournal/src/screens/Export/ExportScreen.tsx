@@ -12,6 +12,7 @@ import {
   useTheme,
 } from 'react-native-paper';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import APP_CONFIG from '../../config/appConfig';
 import {
   downloadTextFile,
   exportAsJSON,
@@ -56,7 +57,7 @@ const ExportScreen: React.FC = () => {
 
   const handleExport = async (format: 'json' | 'txt' | 'pdf') => {
     if (!encryptionKey) {
-      Alert.alert('Error', 'Encryption key not found. Please log in again.');
+      Alert.alert('Oops!', 'Encryption key not found. Please log in again.');
       return;
     }
 
@@ -77,19 +78,19 @@ const ExportScreen: React.FC = () => {
 
       switch (format) {
         case 'json':
-          filename = `mindflow-journals-${timestamp}.json`;
+          filename = `${APP_CONFIG.slug.toLowerCase()}-journals-${timestamp}.json`;
           content = await exportAsJSON(filteredJournals);
           downloadTextFile(content, filename);
           break;
 
         case 'txt':
-          filename = `mindflow-journals-${timestamp}.txt`;
+          filename = `${APP_CONFIG.slug.toLowerCase()}-journals-${timestamp}.txt`;
           content = await exportAsText(filteredJournals);
           downloadTextFile(content, filename);
           break;
 
         case 'pdf':
-          filename = `mindflow-journals-${timestamp}.pdf`;
+          filename = `${APP_CONFIG.slug.toLowerCase()}-journals-${timestamp}.pdf`;
           uri = await exportAsPDF(filteredJournals);
           await shareFile(uri, filename);
           break;
@@ -101,7 +102,7 @@ const ExportScreen: React.FC = () => {
       );
     } catch (error) {
       console.error('Export error:', error);
-      Alert.alert('Error', 'Failed to export journals. Please try again.');
+      Alert.alert('Oops!', 'Failed to export journals. Please try again.');
     } finally {
       setIsExporting(false);
     }

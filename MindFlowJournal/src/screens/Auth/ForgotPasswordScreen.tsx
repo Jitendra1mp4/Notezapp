@@ -14,7 +14,7 @@ import {
   getVault,
   saveRecoveryKeyHash,
   saveVault,
-} from '../../services/storageService';
+} from '../../services/unifiedStorageService';
 import { useAppDispatch } from '../../stores/hooks';
 import { setAuthenticated } from '../../stores/slices/authSlice';
 import type { QAPair } from '../../types/crypto';
@@ -184,7 +184,7 @@ const ForgotPasswordScreen: React.FC<{ navigation: any }> = ({
       let newRecoveryKeyResult: string | undefined;
 
       if (recoveryMethod === 'answers') {
-        // For security answers, manually update the vault
+        // For security answers, use public API to rebuild vault
         const questionIds = vault.security_questions.map(
           (sq: any) => sq.question
         );
@@ -193,28 +193,15 @@ const ForgotPasswordScreen: React.FC<{ navigation: any }> = ({
           answer: answers[qId],
         }));
 
+        // Unlock vault with security answers to get DK
         const { dk } = CryptoManager.unlockWithAnswers(vault, qaPairs);
 
-        // Manually rebuild the vault with new password
-        const newPasswordSalt = CryptoManager.generateSalt();
-        const newPwdk = CryptoManager['deriveKeyFromPassword'](
-          newPassword,
-          newPasswordSalt
-        );
-        const newPasswordIV = CryptoManager.generateIV();
-        const encryptedDK = CryptoManager['encryptAES256'](
+        // Use public method to rebuild vault with new password
+        newVault = CryptoManager.rebuildVaultWithNewPassword(
+          vault,
           dk,
-          newPwdk,
-          newPasswordIV
+          newPassword
         );
-
-        // Update vault
-        const updatedVault = JSON.parse(JSON.stringify(vault));
-        updatedVault.salts.master_salt = newPasswordSalt;
-        updatedVault.key_wraps.dk_wrapped_by_password = encryptedDK;
-        updatedVault.updated_at = new Date().toISOString();
-
-        newVault = updatedVault;
       } else {
         // For recovery key method, use recoverAndReset flow
         const result = CryptoManager.recoverAndReset(
@@ -369,7 +356,7 @@ const ForgotPasswordScreen: React.FC<{ navigation: any }> = ({
               disabled={isLoading}
               loading={isLoading}
             >
-              Verify Answers
+              { isLoading ? "Verifying securely..." : "Verify Answers"}
             </Button>
 
             <Button
@@ -409,7 +396,7 @@ const ForgotPasswordScreen: React.FC<{ navigation: any }> = ({
               disabled={isLoading || !recoveryKey.trim()}
               loading={isLoading}
             >
-              Verify Recovery Key
+              {isLoading ? "Verifying securely..." : "Verify Recovery Key"}
             </Button>
 
             <Button
@@ -479,7 +466,7 @@ const ForgotPasswordScreen: React.FC<{ navigation: any }> = ({
               disabled={!isPasswordValid || !passwordsMatch || isLoading}
               loading={isLoading}
             >
-              Set New Password
+             {isLoading?"Working Securely...":"Set New Password"}
             </Button>
 
             <Button

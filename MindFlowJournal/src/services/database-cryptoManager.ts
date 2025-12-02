@@ -1,97 +1,110 @@
 /**
- * Database Service with Per-Note Encryption
+ * Database Service with Per-Note Encryption (using expo-sqlite for Expo Go compatibility)
  * 
- * This updated service uses CryptoManager to encrypt/decrypt individual notes
- * instead of storing a single encrypted JSON blob of all journals.
+ * This service uses CryptoManager to encrypt/decrypt individual notes
+ * and stores them in expo-sqlite database
  */
 
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { QuickSQLite } from 'react-native-quick-sqlite';
+import * as SQLite from 'expo-sqlite';
 import { Journal } from '../types';
 import { EncryptedNote } from '../types/crypto';
+import APP_CONFIG from '../config/appConfig';
 import CryptoManager from './cryptoManager';
 
-const DB_NAME = 'mindflow.db';
+let db: SQLite.SQLiteDatabase | null = null;
+
+const DB_NAME = APP_CONFIG.dbName;
 
 // --- Database Initialization ---
 
-export const initDatabase = () => {
-  // Open the database (creates if doesn't exist)
-  const result = QuickSQLite.open(DB_NAME);
+export const initDatabase = async () => {
+  try {
+    // Open the database (creates if doesn't exist)
+    db = await SQLite.openDatabaseAsync(DB_NAME);
+    
+    // Create key-value store table
+    await db.execAsync(`
+      CREATE TABLE IF NOT EXISTS key_value_store (
+        key TEXT PRIMARY KEY,
+        value TEXT
+      );
+    `);
 
-  // Create key-value store table
-  QuickSQLite.execute(DB_NAME, `
-    CREATE TABLE IF NOT EXISTS key_value_store (
-      key TEXT PRIMARY KEY,
-      value TEXT
-    );
-  `);
-
-  // Create journals table with per-note encryption
-  // Each row is one encrypted note with its own IV
-  QuickSQLite.execute(DB_NAME, `
-    CREATE TABLE IF NOT EXISTS journals (
-      id TEXT PRIMARY KEY,
-      date TEXT,
-      iv TEXT,
-      content TEXT NOT NULL,
-      title TEXT,
-      mood TEXT,
-      tags_encrypted TEXT,
-      images TEXT,
-      created_at TEXT,
-      updated_at TEXT
-    );
-  `);
+    // Create journals table with per-note encryption
+    // Each row is one encrypted note with its own IV
+    await db.execAsync(`
+      CREATE TABLE IF NOT EXISTS journals (
+        id TEXT PRIMARY KEY,
+        date TEXT,
+        iv TEXT,
+        content TEXT NOT NULL,
+        title TEXT,
+        mood TEXT,
+        tags_encrypted TEXT,
+        images TEXT,
+        created_at TEXT,
+        updated_at TEXT
+      );
+    `);
+    
+    console.log('Database initialized successfully');
+  } catch (error) {
+    console.error('Error initializing database:', error);
+    throw error;
+  }
 };
-
-// Call this when app starts
-initDatabase();
 
 // --- Helper for Key-Value Store ---
 
-const setValue = (key: string, value: string) => {
-  QuickSQLite.execute(
-    DB_NAME,
-    'INSERT OR REPLACE INTO key_value_store (key, value) VALUES (?, ?)',
-    [key, value]
-  );
-};
-
-const getValue = (key: string): string | null => {
-  const result = QuickSQLite.execute(
-    DB_NAME,
-    'SELECT value FROM key_value_store WHERE key = ?',
-    [key]
-  );
-
-  if (result.rows && result.rows.length > 0) {
-    return result.rows.item(0).value;
+const setValue = async (key: string, value: string) => {
+  try {
+    if (!db) throw new Error('Database not initialized');
+    await db.runAsync(
+      'INSERT OR REPLACE INTO key_value_store (key, value) VALUES (?, ?)',
+      [key, value]
+    );
+  } catch (error) {
+    console.error('Error setting value:', error);
+    throw error;
   }
-  return null;
 };
 
-const deleteValue = (key: string) => {
-  QuickSQLite.execute(
-    DB_NAME,
-    'DELETE FROM key_value_store WHERE key = ?',
-    [key]
-  );
+const getValue = async (key: string): Promise<string | null> => {
+  try {
+    if (!db) throw new Error('Database not initialized');
+    const result = await db.getFirstAsync<{ value: string }>(
+      'SELECT value FROM key_value_store WHERE key = ?',
+      [key]
+    );
+    return result?.value ?? null;
+  } catch (error) {
+    console.error('Error getting value:', error);
+    return null;
+  }
+};
+
+const deleteValue = async (key: string) => {
+  try {
+    if (!db) throw new Error('Database not initialized');
+    await db.runAsync(
+      'DELETE FROM key_value_store WHERE key = ?',
+      [key]
+    );
+  } catch (error) {
+    console.error('Error deleting value:', error);
+    throw error;
+  }
 };
 
 // --- Storage Keys ---
-const KEYS = {
-  VAULT: `@mindflow_vault`,
-  RECOVERY_KEY_DISPLAY: `@mindflow_recovery_key_display`,
-  FIRST_LAUNCH: `@mindflow_first_launch`,
-  MIGRATION_COMPLETE_V1: `migration_complete_v1`,
-};
+const KEYS = APP_CONFIG.storageKeys;
 
 // --- Core Functions ---
 
 export const isFirstLaunch = async (): Promise<boolean> => {
   try {
-    const value = getValue(KEYS.FIRST_LAUNCH);
+    const value = await getValue(KEYS.FIRST_LAUNCH);
     return value === null;
   } catch (error) {
     console.error('Error checking first launch:', error);
@@ -101,7 +114,7 @@ export const isFirstLaunch = async (): Promise<boolean> => {
 
 export const markAsLaunched = async (): Promise<void> => {
   try {
-    setValue(KEYS.FIRST_LAUNCH, 'true');
+    await setValue(KEYS.FIRST_LAUNCH, 'true');
   } catch (error) {
     console.error('Error marking as launched:', error);
   }
@@ -109,18 +122,18 @@ export const markAsLaunched = async (): Promise<void> => {
 
 // --- Vault Functions ---
 
-export const saveVault = async (vault: any): Promise<void> => {
+export const saveVault = async (vault: Record<string, any>): Promise<void> => {
   try {
-    setValue(KEYS.VAULT, JSON.stringify(vault));
+    await setValue(KEYS.VAULT, JSON.stringify(vault));
   } catch (error) {
     console.error('Error saving vault:', error);
     throw new Error('Failed to save vault');
   }
 };
 
-export const getVault = async (): Promise<any | null> => {
+export const getVault = async (): Promise<Record<string, any> | null> => {
   try {
-    const vaultStr = getValue(KEYS.VAULT);
+    const vaultStr = await getValue(KEYS.VAULT);
     if (!vaultStr) return null;
     return JSON.parse(vaultStr);
   } catch (error) {
@@ -131,7 +144,7 @@ export const getVault = async (): Promise<any | null> => {
 
 export const saveRecoveryKeyHash = async (recoveryKey: string): Promise<void> => {
   try {
-    setValue(KEYS.RECOVERY_KEY_DISPLAY, recoveryKey);
+    await setValue(KEYS.RECOVERY_KEY_DISPLAY, recoveryKey);
   } catch (error) {
     console.error('Error saving recovery key:', error);
     throw new Error('Failed to save recovery key');
@@ -140,7 +153,7 @@ export const saveRecoveryKeyHash = async (recoveryKey: string): Promise<void> =>
 
 export const getRecoveryKeyHash = async (): Promise<string | null> => {
   try {
-    return getValue(KEYS.RECOVERY_KEY_DISPLAY);
+    return await getValue(KEYS.RECOVERY_KEY_DISPLAY);
   } catch (error) {
     console.error('Error retrieving recovery key hash:', error);
     return null;
@@ -149,7 +162,7 @@ export const getRecoveryKeyHash = async (): Promise<string | null> => {
 
 export const clearRecoveryKeyDisplay = async (): Promise<void> => {
   try {
-    deleteValue(KEYS.RECOVERY_KEY_DISPLAY);
+    await deleteValue(KEYS.RECOVERY_KEY_DISPLAY);
   } catch (error) {
     console.error('Error clearing recovery key display:', error);
   }
@@ -168,6 +181,8 @@ export const saveJournal = async (
   dk: string
 ): Promise<void> => {
   try {
+    if (!db) throw new Error('Database not initialized');
+    
     // Encrypt the note using CryptoManager
     const encryptedNote = CryptoManager.encryptNote(dk, journal.text, {
       id: journal.id,
@@ -179,20 +194,19 @@ export const saveJournal = async (
     });
 
     // Save encrypted note to database
-    QuickSQLite.execute(
-      DB_NAME,
+    await db.runAsync(
       `INSERT OR REPLACE INTO journals 
        (id, date, iv, content, title, mood, created_at, updated_at) 
        VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         encryptedNote.id,
-        encryptedNote.date,
+        encryptedNote.date || '',
         encryptedNote.iv,
         encryptedNote.content,
-        encryptedNote.title,
-        encryptedNote.mood,
-        encryptedNote.created_at,
-        encryptedNote.updated_at,
+        encryptedNote.title || '',
+        encryptedNote.mood || '',
+        encryptedNote.created_at || new Date().toISOString(),
+        encryptedNote.updated_at || new Date().toISOString(),
       ]
     );
   } catch (error) {
@@ -213,29 +227,39 @@ export const getJournal = async (
   dk: string
 ): Promise<Journal | null> => {
   try {
-    const result = QuickSQLite.execute(
-      DB_NAME,
+    if (!db) throw new Error('Database not initialized');
+    
+    const row = await db.getFirstAsync<{
+      id: string;
+      date: string;
+      iv: string;
+      content: string;
+      title: string;
+      mood: string;
+      images: string;
+      created_at: string;
+      updated_at: string;
+    }>(
       `SELECT id, date, iv, content, title, mood, images, created_at, updated_at 
        FROM journals WHERE id = ?`,
       [id]
     );
 
-    if (!result.rows || result.rows.length === 0) {
+    if (!row) {
       return null;
     }
 
-    const row = result.rows.item(0);
-
-      const encryptedNoteObject : EncryptedNote = {
-          id: row.id,
-          date: row.date,
-          iv: row.iv,
-          content: row.content,
-          title: row.title,
-          mood: row.mood,
-          created_at: row.created_at,
-          updated_at: row.updated_at,
-      };
+    const encryptedNoteObject: EncryptedNote = {
+      id: row.id,
+      date: row.date,
+      iv: row.iv,
+      content: row.content,
+      title: row.title,
+      mood: row.mood,
+      created_at: row.created_at,
+      updated_at: row.updated_at,
+    };
+    
     // Decrypt the content
     const decryptedText = CryptoManager.decryptNote(dk, encryptedNoteObject);
 
@@ -273,33 +297,38 @@ export const getJournal = async (
  */
 export const listJournals = async (dk: string): Promise<Journal[]> => {
   try {
-    const result = QuickSQLite.execute(
-      DB_NAME,
+    if (!db) throw new Error('Database not initialized');
+    
+    const rows = await db.getAllAsync<{
+      id: string;
+      date: string;
+      iv: string;
+      content: string;
+      title: string;
+      mood: string;
+      images: string;
+      created_at: string;
+      updated_at: string;
+    }>(
       `SELECT id, date, iv, content, title, mood, images, created_at, updated_at 
        FROM journals ORDER BY date DESC`
     );
 
-    if (!result.rows) {
-      return [];
-    }
-
     const journals: Journal[] = [];
 
-    for (let i = 0; i < result.rows.length; i++) {
-      const row = result.rows.item(i);
-
+    for (const row of rows) {
       try {
-          const noteObject : EncryptedNote = {
-              id: row.id,
-              date: row.date,
-              iv: row.iv,
-              content: row.content,
-              title: row.title,
-              mood: row.mood,
-              created_at: row.created_at,
-              updated_at: row.updated_at,
-              
-          };
+        const noteObject: EncryptedNote = {
+          id: row.id,
+          date: row.date,
+          iv: row.iv,
+          content: row.content,
+          title: row.title,
+          mood: row.mood,
+          created_at: row.created_at,
+          updated_at: row.updated_at,
+        };
+        
         // Decrypt content
         const decryptedText = CryptoManager.decryptNote(dk, noteObject);
 
@@ -344,8 +373,9 @@ export const listJournals = async (dk: string): Promise<Journal[]> => {
  */
 export const deleteJournal = async (id: string): Promise<void> => {
   try {
-    QuickSQLite.execute(
-      DB_NAME,
+    if (!db) throw new Error('Database not initialized');
+    
+    await db.runAsync(
       'DELETE FROM journals WHERE id = ?',
       [id]
     );
@@ -367,6 +397,8 @@ export const reEncryptAllJournals = async (
   newDk: string
 ): Promise<void> => {
   try {
+    if (!db) throw new Error('Database not initialized');
+    
     // Get all encrypted journals
     const journals = await listJournals(oldDk);
 
@@ -380,8 +412,7 @@ export const reEncryptAllJournals = async (
         images: journal.images,
       });
 
-      QuickSQLite.execute(
-        DB_NAME,
+      await db.runAsync(
         `UPDATE journals 
          SET iv = ?, content = ?, updated_at = ? 
          WHERE id = ?`,
@@ -406,16 +437,13 @@ export const reEncryptAllJournals = async (
  */
 export const getJournalCount = async (): Promise<number> => {
   try {
-    const result = QuickSQLite.execute(
-      DB_NAME,
+    if (!db) throw new Error('Database not initialized');
+    
+    const result = await db.getFirstAsync<{ count: number }>(
       'SELECT COUNT(*) as count FROM journals'
     );
 
-    if (!result.rows || result.rows.length === 0) {
-      return 0;
-    }
-
-    return result.rows.item(0).count;
+    return result?.count ?? 0;
   } catch (error) {
     console.error('Error getting journal count:', error);
     return 0;
@@ -427,8 +455,9 @@ export const getJournalCount = async (): Promise<number> => {
  */
 export const clearAllData = async (): Promise<void> => {
   try {
-    QuickSQLite.execute(DB_NAME, 'DELETE FROM journals');
-    QuickSQLite.execute(DB_NAME, 'DELETE FROM key_value_store');
+    if (!db) throw new Error('Database not initialized');
+    
+    await db.execAsync('DELETE FROM journals; DELETE FROM key_value_store;');
   } catch (error) {
     console.error('Error clearing data:', error);
     throw new Error('Failed to clear data');
@@ -440,14 +469,14 @@ export const clearAllData = async (): Promise<void> => {
  * (Run once on app startup for backward compatibility)
  */
 export const migrateFromAsyncStorage = async (dk: string): Promise<void> => {
-  const isMigrated = getValue(KEYS.MIGRATION_COMPLETE_V1);
+  const isMigrated = await getValue(KEYS.MIGRATION_COMPLETE_V1);
   if (isMigrated) {
     return;
   }
 
   try {
     // Check if old format exists in AsyncStorage
-    const oldJournalsStr = await AsyncStorage.getItem('@mindflow_journals');
+    const oldJournalsStr = await AsyncStorage.getItem(APP_CONFIG.storageKeys.JOURNALS);
     if (oldJournalsStr) {
       // This would be old encrypted format
       // You'd need the old key to decrypt if it was encrypted
@@ -455,7 +484,7 @@ export const migrateFromAsyncStorage = async (dk: string): Promise<void> => {
     }
 
     // Mark migration as complete
-    setValue(KEYS.MIGRATION_COMPLETE_V1, 'true');
+    await setValue(KEYS.MIGRATION_COMPLETE_V1, 'true');
     console.log('Migration check complete');
   } catch (error) {
     console.error('Migration error:', error);

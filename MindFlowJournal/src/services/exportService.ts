@@ -3,6 +3,7 @@ import * as Print from 'expo-print';
 import * as Sharing from 'expo-sharing';
 import { Platform } from 'react-native';
 import { Journal } from '../types';
+import APP_CONFIG from '../config/appConfig';
 
 /**
  * Export journals as JSON
@@ -16,7 +17,7 @@ export const exportAsJSON = async (journals: Journal[]): Promise<string> => {
  * Export journals as plain text
  */
 export const exportAsText = async (journals: Journal[]): Promise<string> => {
-  let textContent = 'MindFlow Journal Export\n';
+  let textContent = `${APP_CONFIG.displayName} Export\n`;
   textContent += '='.repeat(50) + '\n\n';
 
   journals.forEach((journal, index) => {
@@ -101,7 +102,7 @@ export const exportAsPDF = async (journals: Journal[]): Promise<string> => {
       </head>
       <body>
         <div class="header">
-          <h1>📝 MindFlow Journal</h1>
+          <h1>📝 ${APP_CONFIG.displayName}</h1>
           <p>Personal Journal Export</p>
           <p style="font-size: 12px; color: #666;">Total Entries: ${journals.length}</p>
         </div>

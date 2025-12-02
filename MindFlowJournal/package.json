@@ -1,5 +1,5 @@
 {
-  "name": "mindflowjournal",
+  "name": "d-journal-hub",
   "main": "expo/AppEntry.js",
   "version": "1.0.0",
   "scripts": {

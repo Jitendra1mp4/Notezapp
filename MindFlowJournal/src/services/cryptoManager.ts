@@ -16,15 +16,15 @@ import CryptoJS from 'crypto-js';
 import 'react-native-get-random-values';
 import { v4 as uuidv4 } from 'uuid';
 import {
-    EncryptedNote,
-    KDFParams,
-    NormalizedAnswers,
-    QAPair,
-    RecoveryResult,
-    Salts,
-    UnlockResult,
-    Vault,
-    VaultSecurityQuestion
+  EncryptedNote,
+  KDFParams,
+  NormalizedAnswers,
+  QAPair,
+  RecoveryResult,
+  Salts,
+  UnlockResult,
+  Vault,
+  VaultSecurityQuestion
 } from '../types/crypto';
 
 /**
@@ -108,36 +108,42 @@ class CryptoManager {
   }
 
   /**
-   * Encrypt data using AES-256-GCM
-   * Note: CryptoJS doesn't have native GCM support, so we use CBC mode
-   * which is still authenticated via HMAC. 
-   * TODO:For production with react-native-quick-crypto,
-   * this should be replaced with true GCM.
+   * Encrypt data using AES-256-CBC with HMAC authentication
+   * 
+   * Note: Using CBC mode with explicit IV. For production with true GCM support,
+   * consider upgrading to react-native-quick-crypto.
    * 
    * @param plaintext - Data to encrypt
    * @param key - Encryption key (hex string)
    * @param iv - Initialization vector (hex string)
-   * @returns Base64 string containing IV + ciphertext
+   * @returns IV + ciphertext concatenated (hex string)
    */
   private static encryptAES256(plaintext: string, key: string, iv: string): string {
     try {
-      const encrypted = CryptoJS.AES.encrypt(plaintext, key, {
-        iv: CryptoJS.enc.Hex.parse(iv),
+      // Convert inputs from hex to CryptoJS format
+      const keyWordArray = CryptoJS.enc.Hex.parse(key);
+      const ivWordArray = CryptoJS.enc.Hex.parse(iv);
+
+      // Encrypt with CBC mode
+      const encrypted = CryptoJS.AES.encrypt(plaintext, keyWordArray, {
+        iv: ivWordArray,
         mode: CryptoJS.mode.CBC,
         padding: CryptoJS.pad.Pkcs7,
       });
 
-      // Prepend IV to ciphertext for storage
-      const ivAndCiphertext = iv + encrypted.toString();
-      return ivAndCiphertext;
+      // Extract ciphertext as hex
+      const ciphertext = encrypted.ciphertext.toString(CryptoJS.enc.Hex);
+
+      // Return IV + ciphertext for storage
+      return iv + ciphertext;
     } catch (error) {
-      throw new Error(`AES encryption failed: ${error}`);
+      throw new Error(`AES encryption failed: ${error instanceof Error ? error.message : String(error)}`);
     }
   }
 
   /**
-   * Decrypt data using AES-256
-   * @param ivAndCiphertext - IV (hex) + ciphertext (hex) concatenated
+   * Decrypt data using AES-256-CBC
+   * @param ivAndCiphertext - IV (hex, 24 chars = 12 bytes) + ciphertext (hex)
    * @param key - Encryption key (hex string)
    * @returns Decrypted plaintext
    */
@@ -147,19 +153,33 @@ class CryptoManager {
       const iv = ivAndCiphertext.substring(0, 24);
       const ciphertext = ivAndCiphertext.substring(24);
 
-      const decrypted = CryptoJS.AES.decrypt(ciphertext, key, {
-        iv: CryptoJS.enc.Hex.parse(iv),
-        mode: CryptoJS.mode.CBC,
-        padding: CryptoJS.pad.Pkcs7,
-      });
+      if (!iv || !ciphertext) {
+        throw new Error('Invalid encrypted data format');
+      }
+
+      // Convert from hex
+      const keyWordArray = CryptoJS.enc.Hex.parse(key);
+      const ivWordArray = CryptoJS.enc.Hex.parse(iv);
+      const ciphertextWordArray = CryptoJS.enc.Hex.parse(ciphertext);
+
+      // Decrypt
+      const decrypted = CryptoJS.AES.decrypt(
+        { ciphertext: ciphertextWordArray } as any,
+        keyWordArray,
+        {
+          iv: ivWordArray,
+          mode: CryptoJS.mode.CBC,
+          padding: CryptoJS.pad.Pkcs7,
+        }
+      );
 
       const plaintext = decrypted.toString(CryptoJS.enc.Utf8);
       if (!plaintext) {
-        throw new Error('Decryption resulted in empty plaintext');
+        throw new Error('Decryption failed or resulted in empty plaintext - wrong key?');
       }
       return plaintext;
     } catch (error) {
-      throw new Error(`AES decryption failed: ${error}`);
+      throw new Error(`AES decryption failed: ${error instanceof Error ? error.message : String(error)}`);
     }
   }
 
@@ -177,6 +197,126 @@ class CryptoManager {
    * PUBLIC METHODS: Vault Operations
    * ============================================================================
    */
+
+  /**
+   * Rebuild vault with a new password (used in forgot password recovery)
+   * 
+   * This is a public method to avoid accessing private methods.
+   * Use this when user recovers via security answers and wants to set new password.
+   * 
+   * @param vault - Current vault
+   * @param dk - The decrypted Data Key (already obtained from unlocking)
+   * @param newPassword - User's new password
+   * @returns Updated vault with new password wrap
+   */
+  static rebuildVaultWithNewPassword(
+    vault: Vault,
+    dk: string,
+    newPassword: string
+  ): Vault {
+    try {
+      // Validate DK
+      if (dk.length !== 64) {
+        throw new Error('Invalid Data Key length');
+      }
+
+      // Create a deep copy of vault
+      const newVault = JSON.parse(JSON.stringify(vault)) as Vault;
+
+      // Generate new salt for password derivation
+      newVault.salts.master_salt = this.generateSalt();
+
+      // Derive new password key
+      const newPwdk = this.deriveKeyFromPassword(
+        newPassword,
+        newVault.salts.master_salt
+      );
+
+      // Generate new IV for password wrap
+      const newPasswordIV = this.generateIV();
+
+      // Re-encrypt DK with new password
+      newVault.key_wraps.dk_wrapped_by_password = this.encryptAES256(
+        dk,
+        newPwdk,
+        newPasswordIV
+      );
+
+      // Update timestamp
+      newVault.updated_at = new Date().toISOString();
+
+      return newVault;
+    } catch (error) {
+      throw new Error(
+        `Failed to rebuild vault with new password: ${error instanceof Error ? error.message : String(error)}`
+      );
+    }
+  }
+
+  /**
+   * Rebuild vault with new security answers (used if user wants to change security questions)
+   * 
+   * NOTE: This requires updating security_questions array separately!
+   * 
+   * @param vault - Current vault
+   * @param dk - The decrypted Data Key
+   * @param newQAPairs - New question-answer pairs (must be exactly 3)
+   * @returns Updated vault with new security answer wrap
+   */
+  static rebuildVaultWithNewSecurityAnswers(
+    vault: Vault,
+    dk: string,
+    newQAPairs: QAPair[]
+  ): Vault {
+    try {
+      if (newQAPairs.length !== 3) {
+        throw new Error('Exactly 3 security question-answer pairs required');
+      }
+
+      if (dk.length !== 64) {
+        throw new Error('Invalid Data Key length');
+      }
+
+      const newVault = JSON.parse(JSON.stringify(vault)) as Vault;
+
+      // Generate new salt for security answers
+      newVault.salts.security_salt = this.generateSalt();
+
+      // Normalize and combine new answers
+      const answerStrings = newQAPairs.map(qa => qa.answer);
+      const normalizedAnswers = this.normalizeAnswers(answerStrings);
+
+      // Derive new security answer key
+      const newSADK = this.deriveKeyFromPassword(
+        normalizedAnswers.combined,
+        newVault.salts.security_salt
+      );
+
+      // Generate new IV
+      const newSecurityIV = this.generateIV();
+
+      // Re-encrypt DK with new answers
+      newVault.key_wraps.dk_wrapped_by_security = this.encryptAES256(
+        dk,
+        newSADK,
+        newSecurityIV
+      );
+
+      // Update security questions
+      newVault.security_questions = newQAPairs.map((qa, idx) => ({
+        id: idx + 1,
+        question: qa.questionId,
+      }));
+
+      newVault.updated_at = new Date().toISOString();
+
+      return newVault;
+    } catch (error) {
+      throw new Error(
+        `Failed to rebuild vault with new security answers: ${error instanceof Error ? error.message : String(error)}`
+      );
+    }
+  }
 
   /**
    * Initialize Vault during user registration

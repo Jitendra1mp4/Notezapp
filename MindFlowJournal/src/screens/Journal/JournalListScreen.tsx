@@ -3,7 +3,7 @@ import React, { useEffect, useState } from 'react';
 import { FlatList, RefreshControl, StyleSheet, View } from 'react-native';
 import { Card, Chip, FAB, Searchbar, Text, useTheme } from 'react-native-paper';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { listJournals } from '../../services/storageService';
+import { listJournals } from '../../services/unifiedStorageService';
 import { useAppDispatch, useAppSelector } from '../../stores/hooks';
 import { setJournals, setLoading } from '../../stores/slices/journalsSlice';
 import { Journal } from '../../types';

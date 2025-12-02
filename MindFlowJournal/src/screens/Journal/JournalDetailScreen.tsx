@@ -19,7 +19,7 @@ import {
 } from 'react-native-paper';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { base64ToDataUri, deleteEncryptedImage } from '../../services/imageService';
-import { deleteJournal, getJournal } from '../../services/storageService';
+import { deleteJournal, getJournal } from '../../services/unifiedStorageService';
 import { useAppDispatch } from '../../stores/hooks';
 import { deleteJournal as deleteJournalAction } from '../../stores/slices/journalsSlice';
 import { Journal } from '../../types';

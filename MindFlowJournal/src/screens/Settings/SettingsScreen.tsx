@@ -4,32 +4,30 @@ import { Button, Card, List, Switch, Text, TextInput, useTheme } from 'react-nat
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAppDispatch, useAppSelector } from '../../stores/hooks';
 
-import { deriveKeyFromPassword } from '../../services/encryptionService';
+import CryptoManager from '../../services/cryptoManager';
 import {
-    cancelAllNotifications,
-    requestNotificationPermissions,
-    scheduleDailyReminder,
+  cancelAllNotifications,
+  requestNotificationPermissions,
+  scheduleDailyReminder,
 } from '../../services/notificationService';
 import {
-    getMasterKeySalt,
-    reEncryptAllData,
-    saveMasterKeySalt,
-    saveVerificationToken,
-    verifyPassword,
-} from '../../services/storageService';
-import { logout, setSalt } from '../../stores/slices/authSlice';
+  getVault,
+  saveVault,
+} from '../../services/unifiedStorageService';
+import { logout } from '../../stores/slices/authSlice';
 import {
-    setNotificationsEnabled,
-    setNotificationTime,
-    setTheme,
+  setNotificationsEnabled,
+  setNotificationTime,
+  setTheme,
 } from '../../stores/slices/settingsSlice';
 import { Alert } from '../../utils/alert';
 import { useAuth } from '../../utils/authContext';
 
+
 const SettingsScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
   const theme = useTheme();
   const dispatch = useAppDispatch();
-  const { encryptionKey, setEncryptionKey } = useAuth();
+  const { encryptionKey, logout: authLogout } = useAuth();
   const settings = useAppSelector(state => state.settings);
 
   const [timeHour, setTimeHour] = useState('20');
@@ -114,52 +112,53 @@ const SettingsScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
 
   const handleChangePassword = async () => {
     if (newPassword.length < 8) {
-      Alert.alert('Error', 'New password must be at least 8 characters');
+      Alert.alert('⚠️ Oops!', 'New password must be at least 8 characters');
       return;
     }
 
     if (newPassword !== confirmNewPassword) {
-      Alert.alert('Error', 'New passwords do not match');
+      Alert.alert('⚠️ Oops!', 'New passwords do not match');
+      return;
+    }
+
+    if (!encryptionKey) {
+      Alert.alert('⚠️ Oops!', 'Not authenticated');
       return;
     }
 
     setIsChangingPassword(true);
 
     try {
-      if (!encryptionKey) {
-        Alert.alert('Error', 'Not authenticated');
+      // Get current vault
+      const vaultData = await getVault();
+      if (!vaultData) {
+        Alert.alert('Oops!', 'Account not found');
         setIsChangingPassword(false);
         return;
       }
 
       // Verify current password
-      const salt = await getMasterKeySalt();
-      if (!salt) {
-        Alert.alert('Error', 'No account found');
+      try {
+        CryptoManager.unlockWithPassword(vaultData as any, currentPassword);
+      } catch (error) {
+        Alert.alert('Oops!', 'Current password is incorrect');
         setIsChangingPassword(false);
         return;
       }
 
-      const { key: currentKey } = deriveKeyFromPassword(currentPassword, salt);
-      const isValid = await verifyPassword(currentKey);
+      // The encryptionKey we have is already decrypted DK
+      // Use it to rebuild vault with new password
+      const updatedVault = CryptoManager.rebuildVaultWithNewPassword(
+        vaultData as any,
+        encryptionKey,
+        newPassword
+      );
 
-      if (!isValid) {
-        Alert.alert('Error', 'Current password is incorrect');
-        setIsChangingPassword(false);
-        return;
-      }
+      // Save updated vault
+      await saveVault(updatedVault);
 
-      // Derive new key
-      const { key: newKey, salt: newSalt } = deriveKeyFromPassword(newPassword);
-
-      // Re-encrypt all data
-      await reEncryptAllData(currentKey, newKey);
-      await saveMasterKeySalt(newSalt);
-      await saveVerificationToken(newKey);
-
-      // Update auth
-      setEncryptionKey(newKey);
-      dispatch(setSalt(newSalt));
+      // Update encryption key in context (it stays the same)
+      // setEncryptionKey(encryptionKey); // Already set
 
       Alert.alert('Success', 'Password changed successfully!');
       setShowPasswordDialog(false);
@@ -168,7 +167,10 @@ const SettingsScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
       setConfirmNewPassword('');
     } catch (error) {
       console.error('Password change error:', error);
-      Alert.alert('Error', 'Failed to change password. Please try again.');
+      Alert.alert(
+        'Oops!',
+        `Failed to change password: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
     } finally {
       setIsChangingPassword(false);
     }
@@ -177,19 +179,16 @@ const SettingsScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
   const handleLogout = () => {
     Alert.alert(
       'Logout',
-      'Are you sure you want to logout?',
+      'Are you sure you want to logout? Your encryption key will be removed from memory.',
       [
         { text: 'Cancel', style: 'cancel' },
         {
           text: 'Logout',
           style: 'destructive',
           onPress: () => {
-            dispatch(logout());
-            setEncryptionKey(null);
-            navigation.reset({
-              index: 0,
-              routes: [{ name: 'Auth' }],
-            });
+            // Wipe DK from memory and Redux state
+            authLogout(); // Wipe from auth context
+            dispatch(logout()); // Wipe from Redux - this will trigger RootNavigator to switch to AuthStack
           },
         },
       ]

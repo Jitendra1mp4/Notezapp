@@ -2,31 +2,10 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Journal, SecurityQuestion } from '../types';
 import type { Vault } from '../types/crypto';
 import { decryptJSON, encryptJSON } from './encryptionService';
+import APP_CONFIG from '../config/appConfig';
 
-// Storage keys
-
-const APP_NAME = 'D_JOURNAL_HUB'.toLocaleLowerCase();
-
-const APP_NAME_LOWERCASED = APP_NAME.toLocaleLowerCase();
-
-export const KEYS = {
-  // ===== Vault-based architecture (NEW) =====
-  VAULT: `@${APP_NAME_LOWERCASED}_vault`,
-  RECOVERY_KEY_DISPLAY: `@${APP_NAME_LOWERCASED}_recovery_key_display`, // Store recovery key hash for verification UI
-  
-  // ===== Legacy keys (kept for backward compatibility) =====
-  MASTER_KEY_SALT: `@${APP_NAME_LOWERCASED}_master_key_salt`,
-  SECURITY_ANS_SALT: `@${APP_NAME_LOWERCASED}_security_ans_key_salt`,
-  RECOVERY_KEY_SALT: `@${APP_NAME_LOWERCASED}_recovery_key_salt`,
-
-  SECURITY_QUESTIONS: `@${APP_NAME_LOWERCASED}_security_questions`,
-  SECURITY_ANSWERS_HASH: `@${APP_NAME_LOWERCASED}_security_answers_hash`,
-  
-  JOURNALS: `@${APP_NAME_LOWERCASED}_journals`,
-  SETTINGS: `@${APP_NAME_LOWERCASED}_settings`,
-  FIRST_LAUNCH: `@${APP_NAME_LOWERCASED}_first_launch`,
-  VERIFICATION_TOKEN: `@${APP_NAME_LOWERCASED}_verification_token`,
-};
+// Storage keys - all derived from centralized APP_CONFIG
+export const KEYS = APP_CONFIG.storageKeys;
 
 /**
  * Check if this is the first app launch

@@ -3,8 +3,8 @@ import React, { useEffect } from 'react';
 import { Animated, ScrollView, StyleSheet, View } from 'react-native';
 import { Button, Card, Chip, Text, useTheme } from 'react-native-paper';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { listJournals } from '../../services/storageService';
 import { calculateLongestStreak } from '../../services/streakService'; // MAKE SURE THIS EXISTS
+import { listJournals } from '../../services/unifiedStorageService';
 import { useAppDispatch, useAppSelector } from '../../stores/hooks';
 import { setJournals, setLongestStreak } from '../../stores/slices/journalsSlice'; // UPDATED
 import { useAuth } from '../../utils/authContext';

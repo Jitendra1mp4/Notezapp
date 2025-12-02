@@ -1,3 +1,4 @@
+import * as FileSystem from 'expo-file-system';
 import * as ImageManipulator from 'expo-image-manipulator';
 import { Platform } from 'react-native';
 
@@ -45,11 +46,50 @@ export const imageUriToBase64 = async (uri: string): Promise<string> => {
       throw error;
     }
   } else {
-    // For mobile
-    const { default: FileSystem } = await import('expo-file-system');
-    return await FileSystem.readAsStringAsync(uri, {
-      encoding: "base64",
-    });
+    // For mobile (iOS/Android) - use modern File API
+    try {
+      const file = new FileSystem.File(uri);
+      const base64String = await file.text();
+      
+      // If text() doesn't work, try to read the file and convert
+      if (!base64String) {
+        // Fallback: read raw data and convert to base64
+        const fileContent = await fetch(uri).then(r => r.blob());
+        return new Promise((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onloadend = () => {
+            const result = reader.result as string;
+            const base64 = result.split(',')[1] || result;
+            resolve(base64);
+          };
+          reader.onerror = reject;
+          reader.readAsDataURL(fileContent);
+        });
+      }
+      
+      return base64String;
+    } catch (error) {
+      console.error('Error converting mobile image to base64:', error);
+      
+      // Ultimate fallback: fetch and convert as blob
+      try {
+        const response = await fetch(uri);
+        const blob = await response.blob();
+        return new Promise((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onloadend = () => {
+            const result = reader.result as string;
+            const base64 = result.split(',')[1] || result;
+            resolve(base64);
+          };
+          reader.onerror = reject;
+          reader.readAsDataURL(blob);
+        });
+      } catch (fallbackError) {
+        console.error('All base64 conversion methods failed:', fallbackError);
+        throw fallbackError;
+      }
+    }
   }
 };
 

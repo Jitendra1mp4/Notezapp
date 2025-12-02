@@ -2,11 +2,12 @@ import React, { useEffect, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { Button, Text, TextInput, useTheme } from 'react-native-paper';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import APP_CONFIG from '../../config/appConfig';
 import CryptoManager from '../../services/cryptoManager';
 import {
   getVault,
   isFirstLaunch,
-} from '../../services/storageService';
+} from '../../services/unifiedStorageService';
 import { useAppDispatch } from '../../stores/hooks';
 import { setAuthenticated } from '../../stores/slices/authSlice';
 import { Alert } from '../../utils/alert';
@@ -33,7 +34,7 @@ const LoginScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
 
   const handleLogin = async () => {
     if (!password) {
-      Alert.alert('Error', 'Please enter your password');
+      Alert.alert('Oops!', 'Please enter your password');
       return;
     }
 
@@ -41,16 +42,16 @@ const LoginScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
 
     try {
       // 1. Retrieve vault from storage
-      const vault = await getVault();
-      if (!vault) {
-        Alert.alert('Error', 'No account found. Please create an account.');
+      const vaultData = await getVault();
+      if (!vaultData) {
+        Alert.alert('Oops!', 'No account found. Please create an account.');
         setIsLoading(false);
         return;
       }
 
       // 2. Unlock vault with password using CryptoManager
       // This derives the password-based key and decrypts the Data Key (DK)
-      const { dk } = CryptoManager.unlockWithPassword(vault, password);
+      const { dk } = CryptoManager.unlockWithPassword(vaultData as any, password);
 
       // 3. Password is correct - update state
       dispatch(setAuthenticated(true));
@@ -73,7 +74,7 @@ const LoginScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
     >
       <View style={styles.content}>
         <Text variant="displaySmall" style={styles.title}>
-          MindFlow Journal
+          {APP_CONFIG.displayName}
         </Text>
         <Text variant="bodyLarge" style={styles.subtitle}>
           Secure. Private. Yours.
@@ -103,7 +104,7 @@ const LoginScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
           disabled={isLoading || !password}
           loading={isLoading}
         >
-          Unlock
+          {isLoading ? "Unlocking & Securing the environment..." : "Unlock"}
         </Button>
 
         <Button

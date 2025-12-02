@@ -1,11 +1,12 @@
-import React from 'react';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import HomeScreen from '../screens/Home/HomeScreen';
-import JournalListScreen from '../screens/Journal/JournalListScreen';
-import JournalEditorScreen from '../screens/Journal/JournalEditorScreen';
-import JournalDetailScreen from '../screens/Journal/JournalDetailScreen';
+import React from 'react';
+import APP_CONFIG from '../config/appConfig';
 import CalendarScreen from '../screens/Calendar/CalendarScreen';
 import ExportScreen from '../screens/Export/ExportScreen';
+import HomeScreen from '../screens/Home/HomeScreen';
+import JournalDetailScreen from '../screens/Journal/JournalDetailScreen';
+import JournalEditorScreen from '../screens/Journal/JournalEditorScreen';
+import JournalListScreen from '../screens/Journal/JournalListScreen';
 import SettingsScreen from '../screens/Settings/SettingsScreen';
 
 const Stack = createNativeStackNavigator();
@@ -21,7 +22,7 @@ export const MainStack: React.FC = () => {
       <Stack.Screen
         name="Home"
         component={HomeScreen}
-        options={{ title: 'MindFlow Journal' }}
+        options={{ title: APP_CONFIG.displayName }}
       />
       <Stack.Screen
         name="JournalList"

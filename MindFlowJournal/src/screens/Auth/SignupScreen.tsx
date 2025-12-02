@@ -17,7 +17,7 @@ import {
   markAsLaunched,
   saveRecoveryKeyHash,
   saveVault,
-} from '../../services/storageService';
+} from '../../services/unifiedStorageService';
 import { useAppDispatch } from '../../stores/hooks';
 import {
   setAuthenticated,
@@ -119,7 +119,7 @@ const SignupScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
           {
             text: 'I have saved my Recovery Key',
             onPress: () => {
-              clearRecoveryKeyDisplay().catch(err =>
+              clearRecoveryKeyDisplay().catch((err: any) =>
                 console.error('Error clearing recovery key:', err)
               );
               Alert.alert(
