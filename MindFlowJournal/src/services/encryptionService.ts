@@ -1,10 +1,7 @@
 import CryptoJS from 'crypto-js';
 import 'react-native-get-random-values';
+import APP_CONFIG from '../config/appConfig';
 
-// const PBKDF2_ITERATIONS = 100000; // High iteration count for security
-const PBKDF2_ITERATIONS = 1000; // High iteration count for security
-const KEY_SIZE = 256 / 32; // 256 bits = 8 words (32-bit)
-const SALT_SIZE = 128 / 8; // 128 bits = 16 bytes
 
 export interface DerivedKey {
   key: string;
@@ -15,7 +12,7 @@ export interface DerivedKey {
  * Generate a random salt for key derivation
  */
 export const generateSalt = (): string => {
-  const salt = CryptoJS.lib.WordArray.random(SALT_SIZE);
+  const salt = CryptoJS.lib.WordArray.random(APP_CONFIG.SALT_SIZE);
   // return "jitendra kumar s"//salt.toString(CryptoJS.enc.Hex);
   return salt.toString(CryptoJS.enc.Hex);
 };
@@ -25,7 +22,7 @@ export const generateSalt = (): string => {
  * Generate a random salt for key derivation
  */
 export const generateDataKey = (): string => {
-  const data_key = CryptoJS.lib.WordArray.random(KEY_SIZE);
+  const data_key = CryptoJS.lib.WordArray.random(APP_CONFIG.DK_SIZE);
   console.log(`data key: ${data_key.toString(CryptoJS.enc.Hex)}`)
   return data_key.toString(CryptoJS.enc.Hex);
 };
@@ -44,8 +41,8 @@ export const deriveKeyFromPassword = (
   const saltToUse = salt || generateSalt();
   
   const key = CryptoJS.PBKDF2(password, saltToUse, {
-    keySize: KEY_SIZE,
-    iterations: PBKDF2_ITERATIONS,
+    keySize: APP_CONFIG.DK_SIZE,
+    iterations: APP_CONFIG.KDF_ITERATIONS,
   });
 
   return {

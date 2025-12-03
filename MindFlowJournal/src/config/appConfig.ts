@@ -17,6 +17,13 @@ const APP_NAME_NORMALIZED_UNDERSCORE = APP_NAME.replace(/\s+/g, '_').toLowerCase
 const APP_NAME_SLUG = APP_NAME.replace(/\s+/g, '-'); // e.g., "D-Journal-HUB"
 const APP_NAME_PACKAGE = 'djournalhub'; // lowercase, no separators for package name
 
+const KDF_ITERATIONS = 50005; // NIST recommended: 100,000+
+const SALT_SIZE = 32; // 256 bits
+const DK_SIZE = 32; // 256 bits for AES-256
+const IV_SIZE = 12; // 96 bits for GCM
+
+
+
 export const APP_CONFIG = {
   // Display name
   displayName: APP_NAME,
@@ -31,6 +38,13 @@ export const APP_CONFIG = {
 
   // Storage key prefix - used for AsyncStorage and other storage mechanisms
   storageKeyPrefix: `@${APP_NAME_NORMALIZED_UNDERSCORE}`, // e.g., "@d_journal_hub"
+
+  KDF_ITERATIONS: KDF_ITERATIONS ,
+  SALT_SIZE: SALT_SIZE ,
+  DK_SIZE: DK_SIZE ,
+  IV_SIZE: IV_SIZE ,
+
+
 
   // Storage keys - all derived from the prefix
   storageKeys: {

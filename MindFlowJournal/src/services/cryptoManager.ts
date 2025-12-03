@@ -30,10 +30,7 @@ import {
 /**
  * Constants for key derivation
  */
-const KDF_ITERATIONS = 100005; // NIST recommended: 100,000+
-const SALT_SIZE = 32; // 256 bits
-const DK_SIZE = 32; // 256 bits for AES-256
-const IV_SIZE = 12; // 96 bits for GCM
+ import APP_CONFIG from '../config/appConfig';
 
 class CryptoManager {
   /**
@@ -51,7 +48,7 @@ class CryptoManager {
    * @returns Hex string (32 bytes = 256 bits)
    */
   static generateSalt(): string {
-    return this.generateRandomBytes(SALT_SIZE);
+    return this.generateRandomBytes(APP_CONFIG.SALT_SIZE);
   }
 
   /**
@@ -60,7 +57,7 @@ class CryptoManager {
    * @returns Hex string (32 bytes = 256 bits)
    */
   static generateDataKey(): string {
-    return this.generateRandomBytes(DK_SIZE);
+    return this.generateRandomBytes(APP_CONFIG.DK_SIZE);
   }
 
   /**
@@ -69,7 +66,7 @@ class CryptoManager {
    * @returns Hex string (12 bytes = 96 bits)
    */
   static generateIV(): string {
-    return this.generateRandomBytes(IV_SIZE);
+    return this.generateRandomBytes(APP_CONFIG.IV_SIZE);
   }
 
   /**
@@ -80,8 +77,8 @@ class CryptoManager {
    */
   private static deriveKeyFromPassword(password: string, salt: string): string {
     const key = CryptoJS.PBKDF2(password, salt, {
-      keySize: DK_SIZE / 4, // CryptoJS uses 32-bit words
-      iterations: KDF_ITERATIONS,
+      keySize: APP_CONFIG.DK_SIZE / 4, // CryptoJS uses 32-bit words
+      iterations: APP_CONFIG.KDF_ITERATIONS,
       hasher: CryptoJS.algo.SHA256,
     });
     return key.toString(CryptoJS.enc.Hex);
@@ -382,7 +379,7 @@ class CryptoManager {
     // 7. Create KDF parameters (can be updated later if needed)
     const kdfParams: KDFParams = {
       algorithm: 'PBKDF2-SHA256',
-      iterations: KDF_ITERATIONS,
+      iterations: APP_CONFIG.KDF_ITERATIONS,
     };
 
     // 8. Assemble Vault

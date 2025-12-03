@@ -408,7 +408,7 @@ const styles = StyleSheet.create({
   },
   textInput: {
     flex: 1,
-    minHeight: 400,
+    minHeight: 300,
     textAlignVertical: "top",
   },
   gallerySection: {
