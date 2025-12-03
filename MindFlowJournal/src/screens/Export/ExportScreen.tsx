@@ -128,8 +128,9 @@ const ExportScreen: React.FC = () => {
   return (
     <SafeAreaView
       style={[styles.container, { backgroundColor: theme.colors.background }]}
+      edges={['top', 'bottom']}
     >
-      <ScrollView contentContainerStyle={styles.content}>
+      <ScrollView contentContainerStyle={[styles.content, { paddingBottom: 16 }]}>
         <Card style={styles.card}>
           <Card.Content>
             <Text variant="titleLarge" style={styles.title}>

@@ -1,20 +1,20 @@
+import { useFocusEffect } from '@react-navigation/native';
+import { format, parseISO } from 'date-fns';
 import React, { useEffect, useState } from 'react';
-import { View, StyleSheet, FlatList } from 'react-native';
+import { FlatList, StyleSheet, View } from 'react-native';
+import { Calendar, DateData } from 'react-native-calendars';
 import {
-  Text,
-  useTheme,
-  Card,
-  Chip,
-  Button,
-  Divider,
-  IconButton,
+    Button,
+    Card,
+    Chip,
+    Divider,
+    IconButton,
+    Text,
+    useTheme,
 } from 'react-native-paper';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Calendar, DateData } from 'react-native-calendars';
-import { useFocusEffect } from '@react-navigation/native';
-import { useAppSelector } from '../../stores/hooks';
 import { getMarkedDates } from '../../services/streakService';
-import { format, parseISO } from 'date-fns';
+import { useAppSelector } from '../../stores/hooks';
 import { Journal } from '../../types';
 
 const CalendarScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
@@ -157,6 +157,7 @@ const loadJournalsForDate = (dateKey: string) => {
   return (
     <SafeAreaView
       style={[styles.container, { backgroundColor: theme.colors.background }]}
+      edges={['top', 'bottom']}
     >
       {/* Streak Stats */}
       <Card style={styles.statsCard}>
@@ -252,7 +253,7 @@ const loadJournalsForDate = (dateKey: string) => {
             data={journalsForSelectedDate}
             renderItem={renderJournalItem}
             keyExtractor={item => item.id}
-            contentContainerStyle={styles.journalList}
+            contentContainerStyle={[styles.journalList, { paddingBottom: 16 }]}
           />
         )}
       </View>

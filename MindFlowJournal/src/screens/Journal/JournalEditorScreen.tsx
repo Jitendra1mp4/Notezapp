@@ -14,7 +14,6 @@ import {
 import { Button, HelperText, TextInput, useTheme } from "react-native-paper";
 import {
   SafeAreaView,
-  useSafeAreaInsets,
 } from "react-native-safe-area-context";
 import { v4 as uuidv4 } from "uuid";
 import {
@@ -36,7 +35,6 @@ const JournalEditorScreen: React.FC<{ navigation: any; route: any }> = ({
   const theme = useTheme();
   const dispatch = useAppDispatch();
   const { encryptionKey } = useAuth();
-  const insets = useSafeAreaInsets();
 
   const journalId = route.params?.journalId || null;
   const selectedDate = route.params?.selectedDate || null;
@@ -247,8 +245,9 @@ const JournalEditorScreen: React.FC<{ navigation: any; route: any }> = ({
       <SafeAreaView
         style={[
           styles.container,
-          { paddingTop: insets.top, backgroundColor: theme.colors.background },
+          { backgroundColor: theme.colors.background },
         ]}
+        edges={['top', 'bottom']}
       >
         <HelperText type="info" style={styles.loadingText}>
           Loading journal...
@@ -261,15 +260,16 @@ const JournalEditorScreen: React.FC<{ navigation: any; route: any }> = ({
     <SafeAreaView
       style={[
         styles.container,
-        { paddingTop: insets.top, backgroundColor: theme.colors.background },
+        { backgroundColor: theme.colors.background },
       ]}
+      edges={['top', 'bottom']}
     >
       <KeyboardAvoidingView
         behavior={Platform.OS === "ios" ? "padding" : "height"}
         style={styles.keyboardView}
       >
         <ScrollView
-          contentContainerStyle={styles.content}
+          contentContainerStyle={[styles.content, { paddingBottom: 16 }]}
           keyboardShouldPersistTaps="handled"
         >
           <TextInput

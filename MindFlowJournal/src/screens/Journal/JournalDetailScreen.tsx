@@ -133,8 +133,9 @@ const JournalDetailScreen: React.FC<{ navigation: any; route: any }> = ({
   return (
     <SafeAreaView
       style={[styles.container, { backgroundColor: theme.colors.background }]}
+      edges={['top', 'bottom']}
     >
-      <ScrollView contentContainerStyle={styles.content}>
+      <ScrollView contentContainerStyle={[styles.content, { paddingBottom: 16 }]}>
         {journal.title && (
           <Text variant="headlineMedium" style={styles.title}>
             {journal.title}

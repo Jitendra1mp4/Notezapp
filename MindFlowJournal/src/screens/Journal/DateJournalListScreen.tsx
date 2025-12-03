@@ -170,6 +170,7 @@ const DateJournalListScreen: React.FC<{ navigation: any; route: any }> = ({
   return (
     <SafeAreaView
       style={[styles.container, { backgroundColor: theme.colors.background }]}
+      edges={['top', 'bottom']}
     >
       {/* Header Section */}
       <Card style={styles.headerCard}>
@@ -214,7 +215,7 @@ const DateJournalListScreen: React.FC<{ navigation: any; route: any }> = ({
           data={journalsForDate}
           renderItem={renderJournalItem}
           keyExtractor={item => item.id}
-          contentContainerStyle={styles.journalList}
+          contentContainerStyle={[styles.journalList, { paddingBottom: 80 }]}
         />
       )}
 
@@ -255,7 +256,6 @@ const styles = StyleSheet.create({
   },
   journalList: {
     padding: 16,
-    paddingBottom: 80,
   },
   journalCard: {
     marginBottom: 12,

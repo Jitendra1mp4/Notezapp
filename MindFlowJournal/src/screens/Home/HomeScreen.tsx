@@ -104,22 +104,25 @@ const HomeScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
   return (
     <SafeAreaView
       style={[styles.container, { backgroundColor: theme.colors.background }]}
+      edges={['top', 'bottom']}
     >
-      <ScrollView contentContainerStyle={styles.content}>
+      <ScrollView 
+        contentContainerStyle={[styles.content, { paddingBottom: 16 }]}
+      >
         {/* Streak and Journal Count Row */}
         <Card style={styles.card}>
           <Card.Content>
             <View style={styles.statsRow}>
               <View style={styles.statItem}>
+               
+
                 <Animated.View style={{ transform: [{ scale: scaleAnim }] }}>
                   <Text variant="displaySmall" style={styles.statNumber}>
                     {currentStreak}
                   </Text>
                 </Animated.View>
                 <Text variant="bodyMedium">🔥 Current Streak</Text>
-                <Chip icon="trophy" compact style={styles.bestChip}>
-                  Best: {longestStreak}
-                </Chip>
+               
               </View>
               <View style={styles.statItem}>
                 <Text variant="displaySmall" style={styles.statNumber}>
@@ -158,6 +161,9 @@ const HomeScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
                 </View>
               ))}
             </View>
+            <Chip icon="trophy" compact style={[styles.bestChip,{marginHorizontal:20}]}>
+              Longest Strike: {longestStreak}
+            </Chip>
           </Card.Content>
         </Card>
 
@@ -252,6 +258,7 @@ const styles = StyleSheet.create({
   },
   cardTitle: {
     marginBottom: 16,
+    textAlign:"center"
   },
   statsRow: {
     flexDirection: 'row',

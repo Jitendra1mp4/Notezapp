@@ -110,6 +110,7 @@ const renderJournalItem = ({ item, index }: { item: Journal; index: number }) =>
   return (
     <SafeAreaView
       style={[styles.container, { backgroundColor: theme.colors.background }]}
+      edges={['top', 'bottom']}
     >
       {journals.length > 0 && (
         <Searchbar
@@ -136,7 +137,7 @@ const renderJournalItem = ({ item, index }: { item: Journal; index: number }) =>
           data={filteredJournals}
           renderItem={renderJournalItem}
           keyExtractor={item => item.id}
-          contentContainerStyle={styles.list}
+          contentContainerStyle={[styles.list, { paddingBottom: 80 }]}
           refreshControl={
             <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
           }
@@ -163,7 +164,6 @@ const styles = StyleSheet.create({
   },
   list: {
     padding: 16,
-    paddingBottom: 80,
   },
   journalCard: {
     marginBottom: 12,

@@ -6,19 +6,19 @@ import { useAppDispatch, useAppSelector } from '../../stores/hooks';
 
 import CryptoManager from '../../services/cryptoManager';
 import {
-  cancelAllNotifications,
-  requestNotificationPermissions,
-  scheduleDailyReminder,
+    cancelAllNotifications,
+    requestNotificationPermissions,
+    scheduleDailyReminder,
 } from '../../services/notificationService';
 import {
-  getVault,
-  saveVault,
+    getVault,
+    saveVault,
 } from '../../services/unifiedStorageService';
 import { logout } from '../../stores/slices/authSlice';
 import {
-  setNotificationsEnabled,
-  setNotificationTime,
-  setTheme,
+    setNotificationsEnabled,
+    setNotificationTime,
+    setTheme,
 } from '../../stores/slices/settingsSlice';
 import { Alert } from '../../utils/alert';
 import { useAuth } from '../../utils/authContext';
@@ -198,8 +198,9 @@ const SettingsScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
   return (
     <SafeAreaView
       style={[styles.container, { backgroundColor: theme.colors.background }]}
+      edges={['top', 'bottom']}
     >
-      <ScrollView>
+      <ScrollView contentContainerStyle={{ paddingBottom: 16 }}>
         <List.Section>
           <List.Subheader>Appearance</List.Subheader>
           <List.Item
