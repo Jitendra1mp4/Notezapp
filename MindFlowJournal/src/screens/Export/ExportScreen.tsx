@@ -16,7 +16,7 @@ import APP_CONFIG from '../../config/appConfig';
 import {
   exportAsJSON,
   exportAsPDF,
-  exportAsText,
+  exportAsMarkdown,
   saveTextFile,
   shareFile,
 } from '../../services/exportService';
@@ -84,8 +84,8 @@ const ExportScreen: React.FC = () => {
           break;
 
         case 'txt':
-          filename = `${APP_CONFIG.slug.toLowerCase()}-journals-${timestamp}.txt`;
-          content = await exportAsText(filteredJournals);
+          filename = `${APP_CONFIG.slug.toLowerCase()}-journals-${timestamp}.md`;
+          content = await exportAsMarkdown(filteredJournals);
           uri = await saveTextFile(content, filename);
           break;
 
@@ -216,7 +216,7 @@ const ExportScreen: React.FC = () => {
               style={styles.exportButton}
               disabled={isExporting || filteredCount === 0}
             >
-              Export as TXT
+              Export as Markdown Text
             </Button>
             <Text variant="bodySmall" style={styles.formatDesc}>
               Plain text format, easy to read and edit

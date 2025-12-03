@@ -9,6 +9,7 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
+import Markdown from "react-native-markdown-display"; // [web:2][web:10]
 import {
   Button,
   Chip,
@@ -26,7 +27,9 @@ import { Journal } from '../../types';
 import { Alert } from '../../utils/alert';
 import { useAuth } from '../../utils/authContext';
 
+
 const { width: screenWidth } = Dimensions.get('window');
+
 
 const JournalDetailScreen: React.FC<{ navigation: any; route: any }> = ({
   navigation,
@@ -36,18 +39,22 @@ const JournalDetailScreen: React.FC<{ navigation: any; route: any }> = ({
   const dispatch = useAppDispatch();
   const { encryptionKey } = useAuth();
 
+
   const { journalId } = route.params;
   const [journal, setJournal] = useState<Journal | null>(null);
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isDeleting, setIsDeleting] = useState(false);
 
+
   useEffect(() => {
     loadJournal();
   }, [journalId]);
 
+
   const loadJournal = async () => {
     if (!encryptionKey) return;
+
 
     setIsLoading(true);
     try {
@@ -68,6 +75,7 @@ const JournalDetailScreen: React.FC<{ navigation: any; route: any }> = ({
   };
 
 
+
   const handleDelete = () => {
     Alert.alert(
       'Delete Journal Entry',
@@ -83,8 +91,10 @@ const JournalDetailScreen: React.FC<{ navigation: any; route: any }> = ({
     );
   };
 
+
   const confirmDelete = async () => {
     if (!encryptionKey) return;
+
 
     setIsDeleting(true);
     try {
@@ -99,6 +109,18 @@ const JournalDetailScreen: React.FC<{ navigation: any; route: any }> = ({
     }
   };
 
+
+  // Define Markdown styles based on current theme
+  const markdownStyles = {
+    body: { color: theme.colors.onBackground, fontSize: 16, lineHeight: 24 },
+    heading1: { color: theme.colors.primary, marginVertical: 10, fontSize: 24, fontWeight: 'bold' },
+    heading2: { color: theme.colors.secondary, marginVertical: 8, fontSize: 20, fontWeight: 'bold' },
+    paragraph: { marginBottom: 10 },
+    code_block: { backgroundColor: theme.colors.surfaceVariant, borderRadius: 8, padding: 8 },
+    blockquote: { borderLeftColor: theme.colors.primary, borderLeftWidth: 4, paddingLeft: 10, marginVertical: 5, fontStyle: 'italic' },
+  };
+
+
   if (isLoading) {
     return (
       <SafeAreaView
@@ -110,6 +132,7 @@ const JournalDetailScreen: React.FC<{ navigation: any; route: any }> = ({
       </SafeAreaView>
     );
   }
+
 
   if (!journal) {
     return (
@@ -126,9 +149,11 @@ const JournalDetailScreen: React.FC<{ navigation: any; route: any }> = ({
     );
   }
 
+
   const dateObj = new Date(journal.date);
   const formattedDate = format(dateObj, 'EEEE, MMMM dd, yyyy');
   const formattedTime = format(dateObj, 'hh:mm a');
+
 
   return (
     <SafeAreaView
@@ -142,6 +167,7 @@ const JournalDetailScreen: React.FC<{ navigation: any; route: any }> = ({
           </Text>
         )}
 
+
         <View style={styles.metaContainer}>
           <Chip icon="calendar" style={styles.chip}>
             {formattedDate}
@@ -151,7 +177,9 @@ const JournalDetailScreen: React.FC<{ navigation: any; route: any }> = ({
           </Chip>
         </View>
 
+
         <Divider style={styles.divider} />
+
 
        {/* Images Gallery */}
         {journal.images && journal.images.length > 0 && (
@@ -183,9 +211,13 @@ const JournalDetailScreen: React.FC<{ navigation: any; route: any }> = ({
         )}
 
 
-        <Text variant="bodyLarge" style={styles.text}>
-          {journal.text}
-        </Text>
+        {/* Replaced Text with Markdown */}
+        <View style={styles.textContainer}>
+            <Markdown style={markdownStyles}>
+                {journal.text}
+            </Markdown>
+        </View>
+
 
         <View style={styles.footer}>
           <Text variant="bodySmall" style={styles.footerText}>
@@ -195,6 +227,7 @@ const JournalDetailScreen: React.FC<{ navigation: any; route: any }> = ({
             Updated: {format(new Date(journal.updatedAt), 'MMM dd, yyyy hh:mm a')}
           </Text>
         </View>
+
 
         <View style={styles.actions}>
           <Button
@@ -222,6 +255,7 @@ const JournalDetailScreen: React.FC<{ navigation: any; route: any }> = ({
         </View>
       </ScrollView>
 
+
       {/* Full Screen Image Modal */}
       <Modal
         visible={!!selectedImage}
@@ -248,6 +282,7 @@ const JournalDetailScreen: React.FC<{ navigation: any; route: any }> = ({
     </SafeAreaView>
   );
 };
+
 
 const styles = StyleSheet.create({
   container: {
@@ -286,9 +321,8 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     marginRight: 8,
   },
-  text: {
+  textContainer: {
     marginBottom: 24,
-    lineHeight: 24,
   },
   footer: {
     marginBottom: 24,
@@ -323,5 +357,6 @@ const styles = StyleSheet.create({
     height: '100%',
   },
 });
+
 
 export default JournalDetailScreen;

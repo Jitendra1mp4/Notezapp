@@ -129,11 +129,7 @@ const JournalEditorScreen: React.FC<{ navigation: any; route: any }> = ({
          });
         return true;
       };
-
-
       const subscription = BackHandler.addEventListener('hardwareBackPress',onBackPress) ;
-
-
       return () => subscription.remove()
     }, [text, title, imageBase64List, encryptionKey, isJournalModified]),
   );

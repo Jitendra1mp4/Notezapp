@@ -15,7 +15,7 @@ import {
   useTheme,
 } from 'react-native-paper';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { exportAsJSON, exportAsPDF, exportAsText } from '../../services/exportService';
+import { exportAsJSON, exportAsPDF, exportAsMarkdown } from '../../services/exportService';
 import { useAppSelector } from '../../stores/hooks';
 import { Journal } from '../../types';
 
@@ -81,8 +81,8 @@ const DateJournalListScreen: React.FC<{ navigation: any; route: any }> = ({
           encoding: FileSystem.EncodingType.UTF8,
         });
       } else if (exportFormat === 'text') {
-        const content = await exportAsText(journalsForDate);
-        fileName = `journals-${dateFormatted}.txt`;
+        const content = await exportAsMarkdown(journalsForDate);
+        fileName = `journals-${dateFormatted}.md`;
         mimeType = 'text/plain';
         fileUri = `${FileSystem.documentDirectory}${fileName}`;
         await FileSystem.writeAsStringAsync(fileUri, content, {

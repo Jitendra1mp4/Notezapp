@@ -3,9 +3,11 @@ import * as FileSystem from 'expo-file-system/legacy';
 import * as Print from 'expo-print';
 import * as Sharing from 'expo-sharing';
 import { Platform } from 'react-native';
+import { marked } from 'marked'; // [web:9][web:12]
 import APP_CONFIG from '../config/appConfig';
 import { Journal } from '../types';
 import { base64ToDataUri } from './imageService';
+
 
 /**
  * Export journals as JSON with metadata for proper import
@@ -30,29 +32,33 @@ export const exportAsJSON = async (journals: Journal[]): Promise<string> => {
   return JSON.stringify(exportData, null, 2);
 };
 
+
 /**
- * Export journals as plain text
+ * Export journals as plain markdown
  */
-export const exportAsText = async (journals: Journal[]): Promise<string> => {
-  let textContent = `${APP_CONFIG.displayName} Export\n`;
-  textContent += '='.repeat(50) + '\n\n';
+export const exportAsMarkdown = async (journals: Journal[]): Promise<string> => {
+  let markdownContent = `${APP_CONFIG.displayName} Export\n`;
+  markdownContent += '='.repeat(40) + '\n\n';
+
 
   journals.forEach((journal, index) => {
     const date = format(parseISO(journal.date), 'EEEE, MMMM dd, yyyy - hh:mm a');
-    textContent += `Entry ${index + 1}\n`;
-    textContent += `Date: ${date}\n`;
     if (journal.title) {
-      textContent += `Title: ${journal.title}\n`;
+      markdownContent += `# Title: ${journal.title}\n`;
     }
-    textContent += `\n${journal.text}\n`;
+    markdownContent += `*Entry ${index + 1}*\n`;
+    markdownContent += `*Date: ${date}*\n`;
+    markdownContent += `\n${journal.text}\n`;
     if (journal.images && journal.images.length > 0) {
-      textContent += `\n[${journal.images.length} image(s) attached]\n`;
+      markdownContent += `\n[${journal.images.length} image(s) attached]\n`;
     }
-    textContent += '\n' + '-'.repeat(50) + '\n\n';
+    markdownContent += '\n' + '-'.repeat(40) + '\n\n';
   });
 
-  return textContent;
+
+  return markdownContent;
 };
+
 
 /**
  * Export journals as PDF with embedded images
@@ -104,8 +110,22 @@ export const exportAsPDF = async (journals: Journal[]): Promise<string> => {
           .entry-content {
             padding: 15px;
             line-height: 1.8;
-            white-space: pre-wrap;
+            /* Removed white-space: pre-wrap to allow Markdown HTML to flow naturally */
             word-wrap: break-word;
+          }
+          .entry-content h1, .entry-content h2, .entry-content h3 {
+            color: #6200EE;
+            margin-top: 0.5em;
+          }
+          .entry-content blockquote {
+            border-left: 3px solid #ccc;
+            padding-left: 1em;
+            color: #666;
+          }
+          .entry-content code {
+            background: #f0f0f0;
+            padding: 2px 4px;
+            border-radius: 4px;
           }
           .images-container {
             margin: 15px 0;
@@ -169,16 +189,12 @@ export const exportAsPDF = async (journals: Journal[]): Promise<string> => {
         </div>
   `;
 
-  journals.forEach((journal, index) => {
+
+  for (const [index, journal] of journals.entries()) {
     const date = format(parseISO(journal.date), 'EEEE, MMMM dd, yyyy - hh:mm a');
     
-    // Escape HTML in text content
-    const escapedText = journal.text
-      .replace(/&/g, '&amp;')
-      .replace(/</g, '&lt;')
-      .replace(/>/g, '&gt;')
-      .replace(/"/g, '&quot;')
-      .replace(/'/g, '&#039;');
+    // Parse Markdown to HTML using marked
+    const htmlBody = await marked.parse(journal.text, { async: true });
     
     htmlContent += `
       <div class="journal-entry">
@@ -189,8 +205,9 @@ export const exportAsPDF = async (journals: Journal[]): Promise<string> => {
             .replace(/&/g, '&amp;')
             .replace(/</g, '&lt;').replace(/>/g, '&gt;')}</div>` : ''}
         </div>
-        <div class="entry-content">${escapedText}</div>
+        <div class="entry-content">${htmlBody}</div>
     `;
+
 
     // Add images if they exist
     if (journal.images && journal.images.length > 0) {
@@ -220,20 +237,24 @@ export const exportAsPDF = async (journals: Journal[]): Promise<string> => {
       htmlContent += `</div></div>`;
     }
 
+
     htmlContent += `
       </div>
       ${index < journals.length - 1 ? '<div class="divider"></div>' : ''}
     `;
-  });
+  }
+
 
   htmlContent += `
       </body>
     </html>
   `;
 
+
   const { uri } = await Print.printToFileAsync({ html: htmlContent });
   return uri;
 };
+
 
 /**
  * Share file using native share dialog
@@ -286,6 +307,7 @@ export const shareFile = async (uri: string, filename: string): Promise<void> =>
   }
 };
 
+
 /**
  * Get UTI (Uniform Type Identifier) for iOS file sharing
  */
@@ -296,6 +318,7 @@ const getUTI = (filename: string): string => {
   return 'public.data';
 };
 
+
 /**
  * Get MIME type from filename
  */
@@ -305,6 +328,7 @@ const getMimeType = (filename: string): string => {
   if (filename.endsWith('.pdf')) return 'application/pdf';
   return 'application/octet-stream';
 };
+
 
 /**
  * Save text file and return the file URI
@@ -335,6 +359,7 @@ export const saveTextFile = async (content: string, filename: string): Promise<s
   }
 };
 
+
 /**
  * Save file to a shareable location and return the file URI
  * This ensures the file is accessible for sharing/saving
@@ -361,12 +386,14 @@ export const saveFileForSharing = async (content: string, filename: string, mime
   }
 };
 
+
 /**
  * Download text as file (web only) - kept for backward compatibility
  * @deprecated Use saveTextFile instead
  */
 export const downloadTextFile = (content: string, filename: string): void => {
   if (Platform.OS !== 'web') return;
+
 
   const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
   const url = URL.createObjectURL(blob);

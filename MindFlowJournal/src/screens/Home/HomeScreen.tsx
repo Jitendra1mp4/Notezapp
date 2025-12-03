@@ -219,7 +219,7 @@ const HomeScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
                 icon="pencil"
                 compact
               >
-                New Entry Today
+                New Entry
               </Button>
             </View>
           </Card.Content>
