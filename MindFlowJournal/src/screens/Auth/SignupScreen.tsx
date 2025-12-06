@@ -266,11 +266,11 @@ const SignupScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
 
         <Button
           mode="text"
-          onPress={() => navigation.goBack()}
+          onPress={() => navigation.navigate("Login")}
           style={styles.link}
           disabled={controlDisabled}
         >
-          Back to Login
+          Already Setup? Login
         </Button>
       </ScrollView>
     </SafeAreaView>

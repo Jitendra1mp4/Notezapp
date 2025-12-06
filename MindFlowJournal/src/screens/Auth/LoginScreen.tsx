@@ -151,7 +151,7 @@ const LoginScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
             disabled={isLoading}
             style={styles.signupButton}
           >
-            First time? Create Password
+            First time? Lets set it up...
           </Button>
         )}
       </View>
