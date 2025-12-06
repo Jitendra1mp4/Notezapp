@@ -71,7 +71,6 @@ const LoginScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
         return;
       }
 
-      // 🛑 FIX: Destructure 'dk' from the returned object
       const { dk } = CryptoManager.unlockWithPassword(vaultData as any, password);
       
       console.log("✅ DK unlocked successfully");
@@ -96,7 +95,7 @@ const LoginScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
 <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]}>
       <View style={styles.content}>
         <Text variant="displaySmall" style={styles.title}>
-          {APP_CONFIG.displayName}
+         {APP_CONFIG.displayName}
         </Text>
         <Text variant="bodyLarge" style={styles.subtitle}>
           Secure. Private. Yours.
@@ -109,7 +108,7 @@ const LoginScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
         )}
 
         <TextInput
-          label="Password"
+          label="Password 🔑"
           value={password}
           onChangeText={setPassword}
           secureTextEntry={!showPassword}
@@ -133,7 +132,7 @@ const LoginScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
           loading={isLoading}
           style={styles.button}
         >
-          {isLoading ? 'Unlocking...' : 'Unlock'}
+          {isLoading ? '🔓 Unlocking...' : '🔐 Unlock'}
         </Button>
 
         <Button
@@ -142,7 +141,7 @@ const LoginScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
           disabled={isLoading}
           style={styles.link}
         >
-          Forgot Password?
+         😵‍💫 Forgot Password?
         </Button>
 
         {isFirstTime && (

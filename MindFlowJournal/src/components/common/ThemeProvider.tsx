@@ -2,7 +2,7 @@ import React, { useMemo } from 'react';
 import { useColorScheme } from 'react-native';
 import { Provider as PaperProvider } from 'react-native-paper';
 import { useAppSelector } from '../../stores/hooks';
-import { lightTheme, darkTheme } from '../../utils/theme';
+import { darkTheme, lightTheme } from '../../utils/theme';
 
 interface ThemeProviderProps {
   children: React.ReactNode;

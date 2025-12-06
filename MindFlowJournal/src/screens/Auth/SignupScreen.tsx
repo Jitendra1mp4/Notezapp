@@ -157,7 +157,7 @@ const SignupScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
         </Text>
 
         <TextInput
-          label="Password"
+          label="Password 🔑"
           value={password}
           onChangeText={setPassword}
           secureTextEntry={!showPassword}
@@ -178,7 +178,7 @@ const SignupScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
         </HelperText>
 
         <TextInput
-          label="Confirm Password"
+          label="Confirm Password 🔑"
           value={confirmPassword}
           onChangeText={setConfirmPassword}
           secureTextEntry={!showConfirmPassword}
@@ -261,7 +261,7 @@ const SignupScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
           disabled={controlDisabled}
           loading={isLoading}
         >
-          {isLoading ? "Creating a secure environment...":"Create Account"}
+          {isLoading ? "🔏 Creating a secure environment...":"🔒 Create Account"}
         </Button>
 
         <Button

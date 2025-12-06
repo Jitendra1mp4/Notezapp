@@ -34,7 +34,7 @@ const LOCK_TIMEOUT_OPTIONS = [
 
 export const APP_CONFIG = {
   // Display name
-  displayName: APP_NAME,
+  displayName:  "🔏 Journal HUB", // APP_NAME,
 
   // Normalized versions for different use cases
   slug: APP_NAME_SLUG, // For expo slug
