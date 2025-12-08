@@ -7,9 +7,9 @@ const initialState: AppSettings = {
   theme: 'auto',
   notificationsEnabled: false,
   notificationTime: '20:00',
-  // Updated default to 1 minutes
-  autoLockTimeout: 1 * 60 * 1000, // 1 minutes default
+  autoLockTimeout: 1 * 60 * 1000,
   instantLockOnBackground: false,
+  isExportInProgress: false, // ✅ NEW
 };
 
 const settingsSlice = createSlice({
@@ -35,16 +35,21 @@ const settingsSlice = createSlice({
     updateSettings(state, action: PayloadAction<Partial<AppSettings>>) {
       return { ...state, ...action.payload };
     },
+
+     setIsExportInProgress(state, action: PayloadAction<boolean>) {
+      state.isExportInProgress = action.payload;
+    },
   },
 });
 
-export const { 
-  setTheme, 
-  setNotificationsEnabled, 
-  setNotificationTime, 
+export const {
+  setTheme,
+  setNotificationsEnabled,
+  setNotificationTime,
   setAutoLockTimeout,
   setInstantLockOnBackground,
-  updateSettings 
+  updateSettings,
+  setIsExportInProgress, // ✅ NEW
 } = settingsSlice.actions;
 
 export default settingsSlice.reducer;

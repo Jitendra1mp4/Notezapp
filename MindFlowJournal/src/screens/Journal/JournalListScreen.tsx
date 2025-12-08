@@ -1,4 +1,5 @@
 import { ExportModal } from "@/src/components/common/ExportModal";
+import { setIsExportInProgress } from "@/src/stores/slices/settingsSlice";
 import { getMarkdownStyles } from "@/src/utils/markdownStyles";
 import { getJournalCardStyle } from "@/src/utils/theme";
 import { useFocusEffect } from "@react-navigation/native";
@@ -36,6 +37,7 @@ const JournalListScreen: React.FC<{ navigation: any; route: any }> = ({
   // Local state
   const [searchQuery, setSearchQuery] = useState("");
   const [refreshing, setRefreshing] = useState(false);
+  const [isExporting, setIsExporting] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [showExportModal, setShowExportModal] = useState(false);
 
@@ -108,7 +110,9 @@ const JournalListScreen: React.FC<{ navigation: any; route: any }> = ({
       return;
     }
 
-    setIsDeleting(true);
+    setIsExporting(true);
+        dispatch(setIsExportInProgress(true)); // ✅ SET FLAG BEFORE EXPORT
+
     try {
       const dateSuffix = selectedDate || format(new Date(), "yyyy-MM-dd");
       let fileUri: string;
@@ -142,8 +146,10 @@ const JournalListScreen: React.FC<{ navigation: any; route: any }> = ({
       console.error("❌ Export error:", error);
       Alert.alert("Export Failed", "Could not create export file");
     } finally {
-      setIsDeleting(false);
+      setIsExporting(false);
       setShowExportModal(false);
+            dispatch(setIsExportInProgress(false)); // ✅ CLEAR FLAG AFTER EXPORT
+
     }
   };
 
@@ -313,10 +319,9 @@ const JournalListScreen: React.FC<{ navigation: any; route: any }> = ({
               icon="export-variant"
               mode="outlined"
               onPress={() => setShowExportModal(true)}
-              disabled={filteredJournals.length === 0 || isDeleting}
+              disabled={filteredJournals.length === 0 || isDeleting||isExporting}
               style={styles.exportChip}
-            >
-              Export
+            >Export
             </Chip>
           </View>
         </Card.Content>

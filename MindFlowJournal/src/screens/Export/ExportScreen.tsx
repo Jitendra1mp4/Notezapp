@@ -1,3 +1,4 @@
+import { setIsExportInProgress } from "@/src/stores/slices/settingsSlice";
 import { formatDate } from "date-fns";
 import React, { useState } from "react";
 import { Platform, ScrollView, StyleSheet, View } from "react-native";
@@ -20,7 +21,7 @@ import {
   saveTextFile,
   shareFile,
 } from "../../services/exportService";
-import { useAppSelector } from "../../stores/hooks";
+import { useAppDispatch, useAppSelector } from "../../stores/hooks";
 import { Alert } from "../../utils/alert";
 
 const ExportScreen: React.FC = () => {
@@ -29,6 +30,7 @@ const ExportScreen: React.FC = () => {
   const encryptionKey = useAppSelector((state) => state.auth.encryptionKey);
 
   const journals = useAppSelector((state) => state.journals.journals);
+  const dispatch = useAppDispatch(); // ✅ ADD DISPATCH
 
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
@@ -42,6 +44,9 @@ const ExportScreen: React.FC = () => {
 
     return journals.filter((journal) => {
       const journalDate = new Date(journal.date);
+
+        const dispatch = useAppDispatch(); // ✅ ADD DISPATCH
+
       const start = startDate ? new Date(startDate) : null;
       const end = endDate ? new Date(endDate) : null;
 
@@ -56,59 +61,56 @@ const ExportScreen: React.FC = () => {
     });
   };
 
-  const handleExport = async (format: "json" | "txt" | "pdf") => {
+ const handleExport = async (format: 'json' | 'txt' | 'pdf') => {
     if (!encryptionKey) {
-      Alert.alert("Oops!", "Encryption key not found. Please log in again.");
+      Alert.alert('Oops!', 'Encryption key not found. Please log in again.');
       return;
     }
 
     const filteredJournals = getFilteredJournals();
 
     if (filteredJournals.length === 0) {
-      Alert.alert(
-        "No Journals",
-        "No journals found to export with the selected filters.",
-      );
+      Alert.alert('No Journals', 'No journals found to export with the selected filters.');
       return;
     }
 
     setIsExporting(true);
+    dispatch(setIsExportInProgress(true)); // ✅ SET FLAG BEFORE EXPORT
 
     try {
-      const timestamp = formatDate(new Date(), "yyyy-MM-dd-HHmmss");
-      let filename = "";
-      let content = "";
-      let uri = "";
+      const timestamp = formatDate(new Date(), 'yyyy-MM-dd-HHmmss');
+      let filename = '';
+      let content = '';
+      let uri = '';
 
       switch (format) {
-        case "json":
+        case 'json':
           filename = `${APP_CONFIG.slug.toLowerCase()}-journals-${timestamp}.json`;
           content = await exportAsJSON(filteredJournals);
           uri = await saveTextFile(content, filename);
           break;
 
-        case "txt":
+        case 'txt':
           filename = `${APP_CONFIG.slug.toLowerCase()}-journals-${timestamp}.md`;
           content = await exportAsMarkdown(filteredJournals);
           uri = await saveTextFile(content, filename);
           break;
 
-        case "pdf":
+        case 'pdf':
           filename = `${APP_CONFIG.slug.toLowerCase()}-journals-${timestamp}.pdf`;
           uri = await exportAsPDF(filteredJournals);
           break;
       }
 
-      // On mobile, open share dialog which includes "Save to Files" option
-      if (Platform.OS !== "web") {
+      // ✅ Share file (this will background the app)
+      if (Platform.OS !== 'web') {
         await shareFile(uri, filename);
       }
 
-      // Show success message with file info
-      if (Platform.OS === "web") {
+      if (Platform.OS === 'web') {
         Alert.alert(
-          "Success",
-          `Exported ${filteredJournals.length} journal(s) as ${format.toUpperCase()}\n\nFile downloaded: ${filename}`,
+          'Success',
+          `Exported ${filteredJournals.length} journal(s) as ${format.toUpperCase()}\n\nFile downloaded: ${filename}`
         );
       } else {
         // On mobile, show helpful message after share dialog
@@ -120,10 +122,13 @@ const ExportScreen: React.FC = () => {
         // );
       }
     } catch (error) {
-      console.error("Export error:", error);
-      Alert.alert("Oops!", "Failed to export journals. Please try again.");
+      console.error('Export error:', error);
+      Alert.alert('Oops!', 'Failed to export journals. Please try again.');
     } finally {
       setIsExporting(false);
+      // ✅ Clear flag after export completes
+      // Note: The flag will also be cleared when app returns to foreground in App.tsx
+      dispatch(setIsExportInProgress(false));
     }
   };
 

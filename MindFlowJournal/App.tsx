@@ -16,6 +16,7 @@ import {
 import {
   logout
 } from './src/stores/slices/authSlice';
+import { setIsExportInProgress } from './src/stores/slices/settingsSlice';
 
 function AppContent() {
   const appState = useRef(AppState.currentState);
@@ -44,30 +45,41 @@ function AppContent() {
     initStorage();
   }, []);
 
-  useEffect(() => {
+ useEffect(() => {
     const handleAppStateChange = (nextAppState: AppStateStatus) => {
       console.log(`AppState changed from ${appState.current} to ${nextAppState}`);
       
-      // 1. App goes to Background/Inactive (screen off, recent apps, etc.)
+      // 1. App goes to Background/Inactive
       if (appState.current === 'active' && nextAppState.match(/inactive|background/)) {
         backgroundTimeRef.current = Date.now();
 
-        // INSTANT LOCK: Lock immediately if enabled
-        if (isAuthenticated && settings.instantLockOnBackground) {
+        // ✅ CRITICAL FIX: Skip instant lock if export is in progress
+        if (
+          isAuthenticated && 
+          settings.instantLockOnBackground && 
+          !settings.isExportInProgress // ✅ NEW CONDITION
+        ) {
           console.log('🔒 INSTANT LOCK: Locking app immediately');
-          dispatch(logout()); // Clear auth state & encryption key
+          dispatch(logout());
+        } else if (settings.isExportInProgress) {
+          console.log('📤 EXPORT IN PROGRESS: Skipping instant lock');
         }
       } 
       
       // 2. App returns to Foreground
       else if (appState.current.match(/inactive|background/) && nextAppState === 'active') {
+        // ✅ Clear export flag when returning to foreground
+        if (settings.isExportInProgress) {
+          console.log('📤 EXPORT COMPLETE: Clearing export flag');
+          dispatch(setIsExportInProgress(false));
+        }
+
         if (isAuthenticated && backgroundTimeRef.current !== null && !settings.instantLockOnBackground) {
           const elapsed = Date.now() - backgroundTimeRef.current;
           
-          // TIME-BASED LOCK: Check if timeout exceeded
           if (elapsed >= settings.autoLockTimeout) {
             console.log(`🔒 TIME LOCK: Elapsed ${Math.round(elapsed/1000)}s > ${settings.autoLockTimeout/1000}s`);
-            dispatch(logout()); // Lock the app
+            dispatch(logout());
           } else {
             console.log(`✅ UNLOCKED: Only ${Math.round(elapsed/1000)}s elapsed`);
           }
@@ -80,7 +92,13 @@ function AppContent() {
 
     const subscription = AppState.addEventListener('change', handleAppStateChange);
     return () => subscription?.remove();
-  }, [isAuthenticated, settings.autoLockTimeout, settings.instantLockOnBackground, dispatch]);
+  }, [
+    isAuthenticated, 
+    settings.autoLockTimeout, 
+    settings.instantLockOnBackground,
+    settings.isExportInProgress, // ✅ NEW DEPENDENCY
+    dispatch
+  ]);
 
 
     if (!storageReady) {

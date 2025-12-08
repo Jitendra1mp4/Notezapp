@@ -25,10 +25,11 @@ export type AppSettings = {
   theme: 'light' | 'dark' | 'auto';
   notificationsEnabled: boolean;
   notificationTime: string;
-  // New Security Settings
-  autoLockTimeout: number; // in milliseconds (e.g., 300000 for 5 mins)
-  instantLockOnBackground: boolean; // If true, locks immediately when app backgrounds
+  autoLockTimeout: number;
+  instantLockOnBackground: boolean;
+  isExportInProgress: boolean; // ✅ NEW
 };
+
 
 
 export type RootStackParamList = {
