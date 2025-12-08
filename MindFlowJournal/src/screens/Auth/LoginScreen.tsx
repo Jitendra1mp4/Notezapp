@@ -48,6 +48,7 @@ const LoginScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
   }, []);
 
   const handleLogin = async () => {
+    setShowPassword(false)
     if (!password.trim()) {
       Alert.alert("Oops!", "Please enter your password");
       return;
@@ -107,8 +108,8 @@ const LoginScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
           </View>
         )}
 
-        <TextInput
-          label="Password 🔑"
+       <TextInput
+          label="🔑"
           value={password}
           onChangeText={setPassword}
           secureTextEntry={!showPassword}
@@ -116,7 +117,8 @@ const LoginScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
           style={styles.input}
           autoFocus={vaultReady}
           onSubmitEditing={handleLogin}
-          editable={vaultReady}
+          // ✅ FIX: Disable editing when loading OR vault not ready
+          editable={vaultReady && !isLoading} 
           right={
             <TextInput.Icon
               icon={showPassword ? 'eye-off' : 'eye'}
