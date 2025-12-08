@@ -1,3 +1,4 @@
+import { Alert } from "@/src/utils/alert";
 import { getCalendarTheme } from "@/src/utils/theme";
 import { useFocusEffect } from "@react-navigation/native";
 import { format, subDays } from "date-fns";
@@ -84,10 +85,28 @@ const HomeScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
     setMarkedDates(marked);
   };
 
-  const handleDayPress = (day: DateData) => {
-    // navigation.navigate("DateJournalList", { selectedDate: day.dateString });
-    navigation.navigate("JournalList", { selectedDate: day.dateString });
-  };
+const handleDayPress = (day: DateData) => {
+  // ✅ VALIDATION: Prevent selecting future dates
+  const selectedDate = new Date(day.dateString);
+  selectedDate.setHours(0, 0, 0, 0);
+  
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  
+  if (selectedDate > today) {
+    Alert.alert(
+      "Future Date Not Available 📅",
+      "Journals can only be created for today or past dates.\n\n" +
+      "🚀 Coming Soon:\n" +
+      "'Todo & Reminders' feature will allow you to plan ahead!\n\n" +
+      "For now, select today or a past date to view or create entries. ✨"
+    );
+    return;
+  }
+  
+  navigation.navigate("JournalList", { selectedDate: day.dateString });
+};
+
 
   const handleCreateJournalForToday = () => {
     const today = format(new Date(), "yyyy-MM-dd");
@@ -193,12 +212,17 @@ const HomeScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
         {/* Calendar View */}
         <Card style={styles.card}>
           <Card.Content>
-            <Calendar
-              markingType="dot"
-              markedDates={markedDates}
-              onDayPress={handleDayPress}
-              theme={getCalendarTheme(theme)} 
-            />
+           // Update the Calendar component
+          <Calendar
+            markingType="dot"
+            markedDates={markedDates}
+            onDayPress={handleDayPress}
+            theme={getCalendarTheme(theme)}
+            // ✅ Disable future dates visually
+            // maxDate={format(new Date(), "yyyy-MM-dd")} // Prevent selecting dates after today
+            disabledByDefault={false}
+          />
+
           </Card.Content>
         </Card>
 

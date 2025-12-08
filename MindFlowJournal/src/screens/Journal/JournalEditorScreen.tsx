@@ -172,80 +172,99 @@ const JournalEditorScreen: React.FC<{ navigation: any; route: any }> = ({
     }
   };
 
-  const handleSave = async (showAlert = false) => {
-    if (isSaving) return false;
+  // Find the handleSave function and update it with future date validation
+const handleSave = async (showAlert = false) => {
+  if (isSaving) return false;
 
-    if (!encryptionKey) {
-      if (showAlert)
-        Alert.alert("Oops!", "Encryption key not found. Please login again.");
-      return false;
+  if (!encryptionKey) {
+    if (showAlert)
+      Alert.alert("Oops!", "Encryption key not found. Please login again.");
+    return false;
+  }
+
+  if (!text.trim()) {
+    if (showAlert)
+      Alert.alert("Validation", "Please write something before saving");
+    return false;
+  }
+
+  setIsSaving(true);
+
+  try {
+    const now = new Date().toISOString();
+    let existingJournal: Journal | null = null;
+
+    if (generatedJournalId) {
+      existingJournal = await getJournal(generatedJournalId, encryptionKey);
     }
 
-    if (!text.trim()) {
-      if (showAlert)
-        Alert.alert("Validation", "Please write something before saving");
-      return false;
+    let journalDate = now;
+    if (existingJournal?.date) {
+      journalDate = existingJournal.date;
+    } else if (selectedDate) {
+      const [year, month, day] = selectedDate.split("-").map(Number);
+      const dateObj = new Date(year, month - 1, day, 12);
+      
+      // ✅ VALIDATION: Prevent future dates
+      const today = new Date();
+      today.setHours(0, 0, 0, 0); // Reset to start of day for accurate comparison
+      
+      const selectedDateObj = new Date(year, month - 1, day);
+      selectedDateObj.setHours(0, 0, 0, 0);
+      
+      if (selectedDateObj > today) {
+        Alert.alert(
+          "Future Date Not Allowed 📅",
+          "You can only create journal entries for today or past dates.\n\n" +
+          "🚀 Upcoming Feature:\n" +
+          "We're working on a 'Todo & Reminders' feature that will let you plan future notes!\n\n" +
+          "Stay tuned for updates! ✨",
+          [{ text: "Got it!", onPress: () => navigation.goBack() }]
+        );
+        return false;
+      }
+      
+      journalDate = dateObj.toISOString();
     }
 
-    setIsSaving(true);
+    const journal: Journal = {
+      id: generatedJournalId || uuidv4(),
+      date: journalDate,
+      createdAt: existingJournal?.createdAt || now,
+      updatedAt: now,
+      title: title.trim() || undefined,
+      text: text.trim(),
+      mood: undefined,
+      images: imageBase64List.length > 0 ? imageBase64List : undefined,
+    };
 
-    try {
-      const now = new Date().toISOString();
+    await saveJournal(journal, encryptionKey);
 
-      let existingJournal: Journal | null = null;
-
-      if (generatedJournalId) {
-        existingJournal = await getJournal(generatedJournalId, encryptionKey);
-      }
-
-      let journalDate = now;
-
-      if (existingJournal?.date) {
-        journalDate = existingJournal.date;
-      } else if (selectedDate) {
-        const [year, month, day] = selectedDate.split("-").map(Number);
-        const dateObj = new Date(year, month - 1, day, 12);
-        journalDate = dateObj.toISOString();
-      }
-
-      const journal: Journal = {
-        id: generatedJournalId || uuidv4(),
-        date: journalDate,
-        createdAt: existingJournal?.createdAt || now,
-        updatedAt: now,
-        title: title.trim() || undefined,
-        text: text.trim(),
-        mood: undefined,
-        images: imageBase64List.length > 0 ? imageBase64List : undefined,
-      };
-
-      await saveJournal(journal, encryptionKey);
-
-      if (isJournalCreated) {
-        dispatch(updateJournal(journal));
-      } else {
-        dispatch(addJournal(journal));
-      }
-
-      setIsJournalCreated(true);
-      setIsJournalModified(true);
-
-      if (!generatedJournalId) setGeneratedJournalId(journal.id);
-
-      if (showAlert) {
-        Alert.alert("Yep!", "🔐Your Journal entry is saved securely!");
-      }
-      return true;
-    } catch (error) {
-      console.error("Error saving journal:", error);
-      if (showAlert) {
-        Alert.alert("Oops!", "Failed to save journal entry");
-      }
-      return false;
-    } finally {
-      setIsSaving(false);
+    if (isJournalCreated) {
+      dispatch(updateJournal(journal));
+    } else {
+      dispatch(addJournal(journal));
     }
-  };
+
+    setIsJournalCreated(true);
+    setIsJournalModified(true);
+
+    if (!generatedJournalId) setGeneratedJournalId(journal.id);
+
+    if (showAlert) {
+      Alert.alert("Yep!", "🔐Your Journal entry is saved securely!");
+    }
+    return true;
+  } catch (error) {
+    console.error("Error saving journal:", error);
+    if (showAlert) {
+      Alert.alert("Oops!", "Failed to save journal entry");
+    }
+    return false;
+  } finally {
+    setIsSaving(false);
+  }
+};
 
   // Define Markdown styles based on current theme
   const markdownStyles = getMarkdownStyles(theme);
