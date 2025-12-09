@@ -85,28 +85,27 @@ const HomeScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
     setMarkedDates(marked);
   };
 
-const handleDayPress = (day: DateData) => {
-  // ✅ VALIDATION: Prevent selecting future dates
-  const selectedDate = new Date(day.dateString);
-  selectedDate.setHours(0, 0, 0, 0);
-  
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  
-  if (selectedDate > today) {
-    Alert.alert(
-      "Future Date Not Available 📅",
-      "Journals can only be created for today or past dates.\n\n" +
-      "🚀 Coming Soon:\n" +
-      "'Todo & Reminders' feature will allow you to plan ahead!\n\n" +
-      "For now, select today or a past date to view or create entries. ✨"
-    );
-    return;
-  }
-  
-  navigation.navigate("JournalList", { selectedDate: day.dateString });
-};
+  const handleDayPress = (day: DateData) => {
+    // ✅ VALIDATION: Prevent selecting future dates
+    const selectedDate = new Date(day.dateString);
+    selectedDate.setHours(0, 0, 0, 0);
 
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    if (selectedDate > today) {
+      Alert.alert(
+        "Future Date Not Available 📅",
+        "Journals can only be created for today or past dates.\n\n" +
+          "🚀 Coming Soon:\n" +
+          "'Todo & Reminders' feature will allow you to plan ahead!\n\n" +
+          "For now, select today or a past date to view or create entries. ✨",
+      );
+      return;
+    }
+
+    navigation.navigate("JournalList", { selectedDate: day.dateString });
+  };
 
   const handleCreateJournalForToday = () => {
     const today = format(new Date(), "yyyy-MM-dd");
@@ -145,25 +144,33 @@ const handleDayPress = (day: DateData) => {
         {/* Streak and Journal Count Row */}
         <Card style={styles.card}>
           <Card.Content>
-            <View style={styles.statsRow}>
-              <View style={styles.statItem}>
-                <Animated.View style={{ transform: [{ scale: scaleAnim }] }}>
+            {journals.length > 0 ? (
+              <View style={styles.statsRow}>
+                <View style={styles.statItem}>
+                  <Animated.View style={{ transform: [{ scale: scaleAnim }] }}>
+                    <Text variant="displaySmall" style={styles.statNumber}>
+                      {currentStreak}
+                    </Text>
+                  </Animated.View>
+                  <Text variant="bodyMedium">🔥 Current Streak</Text>
+                </View>
+                <Pressable
+                  style={styles.statItem}
+                  onPress={() => navigation.navigate("JournalList")}
+                >
                   <Text variant="displaySmall" style={styles.statNumber}>
-                    {currentStreak}
+                    {journals.length}
                   </Text>
-                </Animated.View>
-                <Text variant="bodyMedium">🔥 Current Streak</Text>
+                  <Text variant="bodyMedium">📝 Total Entries</Text>
+                </Pressable>
               </View>
-              <Pressable
-                style={styles.statItem}
-                onPress={() => navigation.navigate("JournalList")}
-              >
-                <Text variant="displaySmall" style={styles.statNumber}>
-                  {journals.length}
-                </Text>
-                <Text variant="bodyMedium">📝 Total Entries</Text>
+            ) : (
+              <Pressable onPress={() => navigation.navigate("JournalEditor")}>
+                <View style={styles.statItem}>
+                  <Text>Start with you first Journal...</Text>
+                </View>
               </Pressable>
-            </View>
+            )}
           </Card.Content>
         </Card>
 
@@ -199,13 +206,13 @@ const handleDayPress = (day: DateData) => {
                 </View>
               ))}
             </View>
-            <Chip
-              icon="trophy"
-              compact
-              style={[styles.bestChip, { marginHorizontal: 20 }]}
-            >
-              Longest Strike: {longestStreak}
-            </Chip>
+               <Chip 
+                icon="trophy" 
+                compact 
+                style={[styles.bestChip, { marginHorizontal: 20 }]}
+              >
+                {`Longest Streak: ${longestStreak}`}
+              </Chip>
           </Card.Content>
         </Card>
 
