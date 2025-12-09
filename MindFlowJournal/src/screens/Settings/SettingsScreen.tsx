@@ -1,3 +1,4 @@
+import { TimePickerInput } from "@/src/components/common/TimePickerInput";
 import { ResetStorage } from "@/src/services/unifiedStorageService";
 import React, { useState } from "react";
 import { Alert, ScrollView, StyleSheet, Switch, View } from "react-native";
@@ -160,21 +161,16 @@ const SettingsScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
           </View>
 
           {settings.notificationsEnabled && (
-            <View style={styles.settingRow}>
-              <View style={styles.settingInfo}>
-                <Text variant="titleMedium">Reminder Time</Text>
-                <Text variant="bodyMedium" style={styles.settingDescription}>
-                  Time for daily notification
-                </Text>
-              </View>
-              <TextInput
+            <View style={styles.timePickerContainer}>
+              <TimePickerInput
                 value={settings.notificationTime}
-                onChangeText={(text) => dispatch(setNotificationTime(text))}
-                mode="outlined"
-                placeholder="20:00"
-                style={styles.timeInput}
-                keyboardType="numeric"
+                onChangeTime={(time) => dispatch(setNotificationTime(time))}
+                label="Reminder Time"
+                disabled={!settings.notificationsEnabled}
               />
+              <HelperText type="info">
+                📱 You'll receive a daily reminder at this time
+              </HelperText>
             </View>
           )}
         </View>
@@ -389,6 +385,11 @@ const styles = StyleSheet.create({
   },
   passwordButton: {
     flex: 1,
+  },
+
+   timePickerContainer: {
+    marginTop: 8,
+    marginBottom: 16,
   },
   timeInput: {
     minWidth: 100,
