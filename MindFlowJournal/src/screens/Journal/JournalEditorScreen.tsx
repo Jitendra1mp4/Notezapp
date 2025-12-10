@@ -16,13 +16,13 @@ import {
 } from "react-native";
 import Markdown from "react-native-markdown-display"; // [web:2][web:10]
 import {
+  ActivityIndicator,
   Button,
   Chip,
-  HelperText,
-  Switch,
+  IconButton,
   Text,
   TextInput,
-  useTheme,
+  useTheme
 } from "react-native-paper";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { v4 as uuidv4 } from "uuid";
@@ -273,303 +273,341 @@ const handleSave = async (showAlert = false) => {
 
   // Define Markdown styles based on current theme
   const markdownStyles = getMarkdownStyles(theme);
-  if (isLoading) {
+
+    if (isLoading) {
     return (
-      <SafeAreaView
-        style={[styles.container, { backgroundColor: theme.colors.background }]}
-        edges={["top", "bottom"]}
-      >
-        <HelperText type="info" style={styles.loadingText}>
-          Loading journal...
-        </HelperText>
-      </SafeAreaView>
+      <View style={[styles.container, styles.centerContent, { backgroundColor: theme.colors.background }]}>
+        <ActivityIndicator size="large" color={theme.colors.primary} />
+      </View>
     );
   }
 
   return (
     <SafeAreaView
       style={[styles.container, { backgroundColor: theme.colors.background }]}
-      edges={["bottom"]} // ✅ Only protect bottom edge
+      edges={["bottom"]} // Standard navigation handles top; we protect bottom
     >
       <KeyboardAvoidingView
         behavior={Platform.OS === "ios" ? "padding" : "height"}
         style={styles.keyboardView}
-        keyboardVerticalOffset={Platform.OS === "ios" ? 90 : 0} // ✅ Add offset for header
+        keyboardVerticalOffset={Platform.OS === "ios" ? 90 : 0}
       >
         <ScrollView
-          contentContainerStyle={[styles.content, { paddingBottom: 80 }]}
+          contentContainerStyle={styles.content}
           keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
         >
-          {/* Editor/Preview Toggle */}
-          <View style={styles.toggleContainer}>
-            <Text style={styles.previewLabel}>Preview</Text>
-            <Switch
-              style={styles.toggleButton}
-              value={isPreviewMode}
-              onValueChange={() => setIsPreviewMode(!isPreviewMode)}
-            />
+          {/* Top Bar: Date & Actions */}
+          <View style={styles.headerRow}>
+            {selectedDate ? (
+              <Chip icon="calendar-month-outline" compact style={styles.dateChip} textStyle={styles.dateChipText}>
+                {selectedDate}
+              </Chip>
+            ) : <View />}
 
-            <Chip
-              icon="floppy"
-              onPress={async () => await handleSave(true)}
-              style={styles.saveButton}
-              disabled={isSaving || !text.trim()}
-            >
-              {isJournalCreated ? "" : "Type to save..."}
-            </Chip>
+            <View style={styles.headerRight}>
+               {/* Toggle Preview/Edit */}
+              <View style={styles.toggleContainer}>
+                 <IconButton 
+                    icon={isPreviewMode ? "eye-off-outline" : "eye-outline"} 
+                    size={20} 
+                    onPress={() => setIsPreviewMode(!isPreviewMode)}
+                    iconColor={theme.colors.onSurfaceVariant}
+                 />
+              </View>
+
+              <Button
+                mode="contained"
+                icon="check"
+                onPress={() => handleSave(true)}
+                loading={isSaving}
+                disabled={isSaving || !text.trim()}
+                compact
+                style={styles.saveButton}
+                labelStyle={styles.saveButtonLabel}
+              >
+                Save
+              </Button>
+            </View>
           </View>
 
+          {/* Title - Modern "Ghost" Style */}
           <TextInput
-            label="Title (optional)"
+            placeholder="Title"
             value={title}
             onChangeText={setTitle}
-            mode="outlined"
-            style={styles.titleInput}
-            placeholder="Title"
+            mode="flat"
+            underlineColor="transparent"
+            activeUnderlineColor="transparent"
+            style={[styles.titleInput, { color: theme.colors.onSurface }]}
+            placeholderTextColor={theme.colors.onSurfaceDisabled}
             returnKeyType="next"
+            contentStyle={styles.titleContent}
           />
 
+          {/* Editor Area - Distraction Free */}
+                   {/* Editor / Preview Area */}
           {isPreviewMode ? (
-            <View
-              style={[
-                styles.previewContainer,
-                { borderColor: theme.colors.outline },
-              ]}
-            >
-              <Pressable onPress={() => setIsPreviewMode(!isPreviewMode)}>
-                <Markdown style={markdownStyles}>
-                  {text ||
-                    "*Nothing to preview*\n ### Quick Guid\n- start line with # [space] for heading heading.\n- Start line with ## [space] for sub heading and so on.\n - Start line with - [space] for bullet\n- Surround text with * to make it italic\n- Surround text with ** to make it bold."}
-                </Markdown>
-              </Pressable>
+            <View style={styles.previewContainer}>
+              <Markdown style={markdownStyles}>
+                {text.trim() ? text : (
+                  "### ✨ Quick Guide\n" +
+                  "Start writing in **Edit** mode using these formats:\n\n" +
+                  "• `# Big Header`\n" +
+                  "• `## Medium Header`\n" +
+                  "• `**Bold Text**`\n" +
+                  "• `*Italic Text*`\n" +
+                  "• `- List item`"
+                )}
+              </Markdown>
             </View>
           ) : (
             <TextInput
-              label="What's on your mind? (Markdown supported)"
+              placeholder="Start writing... (Markdown supported)"
               value={text}
               onChangeText={setText}
-              mode="outlined"
+              mode="flat"
               multiline
-              style={styles.textInput}
-              autoFocus
+              underlineColor="transparent"
+              activeUnderlineColor="transparent"
+              style={[styles.bodyInput, { color: theme.colors.onSurface }]}
+              placeholderTextColor={theme.colors.onSurfaceDisabled}
+              contentStyle={styles.bodyContent}
+              textAlignVertical="top"
+              autoFocus={!title} 
             />
           )}
 
-          {/* Image Gallery Section */}
-          {imageBase64List.length > 0 && (
-            <View style={styles.gallerySection}>
-              <HelperText type="info" style={styles.galleryTitle}>
-                📸 {imageBase64List.length} Image
-                {imageBase64List.length === 1 ? "" : "s"} Added
-              </HelperText>
-              <ScrollView
-                horizontal
-                showsHorizontalScrollIndicator={false}
-                style={styles.imageGallery}
-              >
+
+          {/* Attachments Section */}
+          {(imageBase64List.length > 0 || isCompressingImage) && (
+            <View style={styles.attachmentsArea}>
+               <View style={styles.divider} />
+               <View style={styles.sectionHeader}>
+                <Text variant="labelLarge" style={{ color: theme.colors.outline }}>
+                  Attachments
+                </Text>
+                <Button 
+                  mode="text" 
+                  compact 
+                  onPress={handlePickImage}
+                  disabled={isCompressingImage}
+                >
+                  + Add
+                </Button>
+              </View>
+
+              <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.galleryScroll}>
                 {imageBase64List.map((base64, index) => {
                   const imageUri = base64ToDataUri(base64);
                   return (
-                    <View
-                      key={imageIds[index] || `img-${index}`}
-                      style={styles.imageThumbnailContainer}
-                    >
+                    <View key={index} style={styles.thumbnailWrapper}>
                       <TouchableOpacity
-                        activeOpacity={0.8}
+                        activeOpacity={0.9}
                         onPress={() => setSelectedImage(imageUri)}
                       >
-                        <Image
-                          source={{ uri: imageUri }}
-                          style={styles.imageThumbnail}
-                          onError={(error) => {
-                            console.log(
-                              "Failed image URI preview:",
-                              imageUri.substring(0, 100),
-                            );
-                          }}
-                          onLoad={() => {
-                            console.log(
-                              "Image loaded successfully in editor:",
-                              index,
-                            );
-                          }}
-                        />
+                        <Image source={{ uri: imageUri }} style={styles.thumbnail} />
                       </TouchableOpacity>
                       <TouchableOpacity
+                        style={[styles.removeBtn, { backgroundColor: theme.colors.errorContainer }]}
                         onPress={() => handleRemoveImage(index)}
-                        style={styles.removeImageButton}
                       >
-                        <HelperText type="error" style={styles.removeImageText}>
-                          ✕
-                        </HelperText>
+                        <Text style={{ color: theme.colors.onErrorContainer, fontSize: 10, fontWeight:'bold' }}>✕</Text>
                       </TouchableOpacity>
                     </View>
                   );
                 })}
+                {isCompressingImage && (
+                   <View style={[styles.thumbnail, styles.centerContent, { backgroundColor: theme.colors.surfaceVariant }]}>
+                      <ActivityIndicator size="small" />
+                   </View>
+                )}
               </ScrollView>
             </View>
           )}
+          
+          {/* Floating Action Button for Images if list is empty, or general convenience */}
+          {imageBase64List.length === 0 && !isPreviewMode && (
+             <Button
+                icon="image-plus-outline"
+                mode="text"
+                textColor={theme.colors.secondary}
+                onPress={handlePickImage}
+                style={{ alignSelf: 'flex-start', marginLeft: -8 }}
+             >
+                Add Image
+             </Button>
+          )}
 
-          {/* Image Picker Button */}
-          <Button
-            mode="outlined"
-            onPress={handlePickImage}
-            style={styles.imagePickerButton}
-            loading={isCompressingImage}
-            disabled={isCompressingImage}
-            icon="image-plus"
-          >
-            {isCompressingImage ? "Processing..." : "Add Images"}
-          </Button>
         </ScrollView>
       </KeyboardAvoidingView>
 
-      {/* Full Screen Image Modal */}
+      {/* Fullscreen Image Viewer */}
       {selectedImage && (
         <View style={styles.fullscreenOverlay}>
-          <TouchableOpacity
-            style={styles.fullscreenBackdrop}
-            activeOpacity={1}
+          <Pressable style={StyleSheet.absoluteFill} onPress={() => setSelectedImage(null)} />
+          <Image
+            source={{ uri: selectedImage }}
+            style={styles.fullscreenImage}
+            resizeMode="contain"
+          />
+          <IconButton
+            icon="close-circle"
+            size={32}
+            iconColor="white"
+            style={styles.closeFullscreenBtn}
             onPress={() => setSelectedImage(null)}
           />
-          <View style={styles.fullscreenContent}>
-            <Image
-              source={{ uri: selectedImage }}
-              style={styles.fullscreenImage}
-              resizeMode="contain"
-            />
-            <Button
-              mode="contained-tonal"
-              style={styles.fullscreenCloseButton}
-              onPress={() => setSelectedImage(null)}
-            >
-              Close
-            </Button>
-          </View>
         </View>
       )}
     </SafeAreaView>
   );
+
+
 };
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
-  content: {
-    flexGrow: 1,
-    padding: 10,
-    paddingBottom: 100, // ✅ Add extra bottom padding
-    justifyContent: "flex-start",
+  centerContent: {
+    justifyContent: "center",
+    alignItems: "center",
   },
   keyboardView: {
     flex: 1,
   },
-  titleInput: {
+  content: {
+    paddingHorizontal: 20,
+    paddingTop: 16,
+    paddingBottom: 40,
+    flexGrow: 1,
+  },
+  
+  // Header
+  headerRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
     marginBottom: 12,
   },
-  textInput: {
-    flex: 1,
-    minHeight: 300,
-    textAlignVertical: "top",
-  },
-  // New styles for toggle and preview
-  toggleContainer: {
+  headerRight: {
     flexDirection: "row",
-    justifyContent: "flex-end",
-    alignItems: "flex-end",
-    marginBottom: 8,
-    gap: 8,
+    alignItems: "center",
   },
-  toggleButton: {
-    marginBottom: -5,
-  },
-  previewLabel: {
-    marginBottom: 8,
-  },
-  previewContainer: {
-    flex: 1,
-    minHeight: 300,
-    padding: 12,
+  dateChip: {
+    backgroundColor: 'transparent',
     borderWidth: 1,
-    borderRadius: 4,
+    borderColor: 'rgba(128,128,128, 0.2)',
+    height: 32,
   },
-  gallerySection: {
-    marginVertical: 16,
+  dateChipText: {
+    fontSize: 12,
+    marginVertical: -2, // Tighten vertical centering on some platforms
   },
-  galleryTitle: {
-    marginBottom: 8,
-    fontSize: 14,
-    fontWeight: "500",
-  },
-  imageGallery: {
-    marginBottom: 8,
-  },
-  imageThumbnailContainer: {
-    position: "relative",
+  toggleContainer: {
     marginRight: 8,
   },
-  imageThumbnail: {
-    width: 120,
-    height: 120,
-    borderRadius: 8,
-  },
-  removeImageButton: {
-    position: "absolute",
-    top: -8,
-    right: -8,
-    backgroundColor: "#ff6b6b",
-    borderRadius: 12,
-    width: 24,
-    height: 24,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  removeImageText: {
-    fontSize: 16,
-    color: "white",
-    textAlign: "center",
-  },
-  imagePickerButton: {
-    marginVertical: 12,
-  },
   saveButton: {
-    marginTop: 20,
-    marginBottom: 40, // ✅ Increase bottom margin
+    borderRadius: 20,
+    minWidth: 80,
   },
-  loadingText: {
-    marginTop: 30,
-    textAlign: "center",
+  saveButtonLabel: {
+    fontSize: 13,
+    fontWeight: '600',
+    marginVertical: 4, 
+    marginHorizontal: 12,
   },
+
+  // Inputs
+  titleInput: {
+    backgroundColor: "transparent",
+    paddingHorizontal: 0,
+    marginBottom: 8,
+    // Negative margin to align text with left edge (Paper adds internal padding)
+    marginLeft: -4, 
+  },
+  titleContent: {
+    fontSize: 26,
+    fontWeight: "800",
+    lineHeight: 32,
+  },
+  bodyInput: {
+    backgroundColor: "transparent",
+    paddingHorizontal: 0,
+    marginLeft: -4, // Align with title
+    flex: 1, // Take remaining space
+  },
+  bodyContent: {
+    fontSize: 17,
+    lineHeight: 26,
+    letterSpacing: 0.3,
+  },
+  
+  // Preview
+  previewContainer: {
+    paddingVertical: 12,
+    flex: 1,
+  },
+
+  // Attachments
+  attachmentsArea: {
+    marginTop: 32,
+  },
+  divider: {
+    height: 1,
+    backgroundColor: 'rgba(128,128,128, 0.1)',
+    marginBottom: 16,
+  },
+  sectionHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  galleryScroll: {
+    overflow: 'visible',
+  },
+  thumbnailWrapper: {
+    position: 'relative',
+    marginRight: 12,
+    marginBottom: 4, // shadow room
+  },
+  thumbnail: {
+    width: 100,
+    height: 100,
+    borderRadius: 12,
+    backgroundColor: '#f0f0f0',
+  },
+  removeBtn: {
+    position: 'absolute',
+    top: -6,
+    right: -6,
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: 'white',
+  },
+
+  // Fullscreen
   fullscreenOverlay: {
-    position: "absolute",
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: "rgba(0,0,0,0.95)",
     justifyContent: "center",
     alignItems: "center",
-    zIndex: 10,
-  },
-  fullscreenBackdrop: {
-    position: "absolute",
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    backgroundColor: "rgba(0,0,0,0.9)",
-  },
-  fullscreenContent: {
-    width: "100%",
-    alignItems: "center",
-    paddingHorizontal: 16,
+    zIndex: 999,
   },
   fullscreenImage: {
     width: "100%",
-    height: "80%",
+    height: "85%",
   },
-  fullscreenCloseButton: {
-    marginTop: 12,
+  closeFullscreenBtn: {
+    position: "absolute",
+    top: 40,
+    right: 20,
   },
 });
 

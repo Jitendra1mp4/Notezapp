@@ -89,7 +89,7 @@ const SettingsScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
       : `${Math.round(settings.autoLockTimeout / 60000)} Minutes`;
   };
 
-  return (
+return (
     <SafeAreaView
       style={[styles.container, { backgroundColor: theme.colors.background }]}
       edges={["bottom"]}
@@ -98,48 +98,36 @@ const SettingsScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
         showsVerticalScrollIndicator={false}
         contentContainerStyle={[styles.content, { paddingBottom: 80 }]}
       >
-        {/* Appearance Section */}
-        <View style={styles.section}>
+        {/* Appearance */}
+        <View style={[styles.section, { backgroundColor: theme.colors.surface }]}>
           <Text variant="titleLarge" style={styles.sectionTitle}>
             Theme
           </Text>
-
           <View style={styles.settingRow}>
-            <View
-              style={{
-                flex: 1,
-                justifyContent: "center",
-                alignItems: "center",
-              }}
-            >
-              {/* <View style={styles.settingInfo}>
+            <View style={styles.settingInfo}>
               <Text variant="titleMedium">Theme</Text>
-              <Text variant="bodyMedium" style={styles.settingDescription}>
+              <Text style={styles.settingDescription}>
                 App appearance mode
               </Text>
             </View>
-             */}
-              <View style={styles.themeButtons}>
-                {(["light", "dark", "auto"] as const).map((themeOption) => (
-                  <Button
-                    key={themeOption}
-                    mode={
-                      settings.theme === themeOption ? "contained" : "outlined"
-                    }
-                    onPress={() => dispatch(setTheme(themeOption))}
-                    style={styles.themeButton}
-                    compact
-                  >
-                    {themeOption.charAt(0).toUpperCase() + themeOption.slice(1)}
-                  </Button>
-                ))}
-              </View>
+            <View style={styles.themeButtons}>
+              {(["light", "dark", "auto"] as const).map((opt) => (
+                <Button
+                  key={opt}
+                  mode={settings.theme === opt ? "contained" : "outlined"}
+                  onPress={() => dispatch(setTheme(opt))}
+                  style={styles.themeButton}
+                  compact
+                >
+                  {opt.charAt(0).toUpperCase() + opt.slice(1)}
+                </Button>
+              ))}
             </View>
           </View>
         </View>
 
-        {/* Notifications Section */}
-        <View style={styles.section}>
+        {/* Notifications */}
+        <View style={[styles.section, { backgroundColor: theme.colors.surface }]}>
           <Text variant="titleLarge" style={styles.sectionTitle}>
             Notifications
           </Text>
@@ -147,16 +135,13 @@ const SettingsScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
           <View style={styles.settingRow}>
             <View style={styles.settingInfo}>
               <Text variant="titleMedium">Daily Reminders</Text>
-              <Text variant="bodyMedium" style={styles.settingDescription}>
+              <Text style={styles.settingDescription}>
                 Get daily journaling reminders
               </Text>
             </View>
             <Switch
               value={settings.notificationsEnabled}
-              onValueChange={(value) => {
-                dispatch(setNotificationsEnabled(value));
-              }}
-              trackColor={{ true: theme.colors.primary }}
+              onValueChange={(value) => {dispatch(setNotificationsEnabled(value))}}
             />
           </View>
 
@@ -166,42 +151,40 @@ const SettingsScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
                 value={settings.notificationTime}
                 onChangeTime={(time) => dispatch(setNotificationTime(time))}
                 label="Reminder Time"
-                disabled={!settings.notificationsEnabled}
               />
               <HelperText type="info">
-                📱 You'll receive a daily reminder at this time
+                You’ll receive a daily reminder at this time
               </HelperText>
             </View>
           )}
         </View>
 
-        {/* Security Section */}
-        <View style={[styles.section, { marginBottom: 220 }]}>
+        {/* Security */}
+        <View style={[styles.section, { backgroundColor: theme.colors.surface }]}>
           <Text variant="titleLarge" style={styles.sectionTitle}>
             Security
           </Text>
 
-          {/* Instant Lock */}
+          {/* Instant lock */}
           <View style={styles.settingRow}>
-            <View style={styles.settingInfo}>
+            <View className="settingInfo" style={styles.settingInfo}>
               <Text variant="titleMedium">Instant Lock</Text>
-              <Text variant="bodyMedium" style={styles.settingDescription}>
-                Lock immediately when screen turns off or app is minimized
+              <Text style={styles.settingDescription}>
+                Lock immediately when app goes to background
               </Text>
             </View>
             <Switch
               value={settings.instantLockOnBackground}
               onValueChange={handleInstantLockToggle}
-              trackColor={{ true: theme.colors.primary }}
             />
           </View>
 
-          {/* Auto Lock Timeout */}
+          {/* Auto lock timeout (only when instant lock is off) */}
           {!settings.instantLockOnBackground && (
             <View style={styles.settingRow}>
               <View style={styles.settingInfo}>
                 <Text variant="titleMedium">Auto-Lock Timeout</Text>
-                <Text variant="bodyMedium" style={styles.settingDescription}>
+                <Text style={styles.settingDescription}>
                   Lock after inactivity
                 </Text>
               </View>
@@ -215,16 +198,15 @@ const SettingsScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
             </View>
           )}
 
+          {/* Change password + destroy DB row */}
           <View
             style={{
-              display: "flex",
-              flexDirection: "column",
+              flexDirection: "row",
               justifyContent: "space-around",
               gap: 12,
-              marginBottom: 20,
+              marginTop: 20,
             }}
           >
-            {/* Change Password */}
             <Button
               mode="outlined"
               onPress={() => setShowPasswordDialog(true)}
@@ -233,22 +215,16 @@ const SettingsScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
             >
               Change Password
             </Button>
+
             <Button
               mode="outlined"
-              style={{
-                flex: 1,
-                borderColor: theme.colors.error,
-                marginVertical: 10,
-              }}
+              style={styles.resetButton}
               onPress={async () => {
                 Alert.alert(
                   "Destroy Database!",
-                  "Are you sure you want to destroy DB everything will be reset.",
+                  "Are you sure you want to destroy DB? Everything will be reset.",
                   [
-                    {
-                      text: "Cancel",
-                      onPress: () => console.log("Destroy canceled"),
-                    },
+                    { text: "Cancel", onPress: () => {} },
                     {
                       text: "Yes",
                       onPress: () => {
@@ -262,35 +238,30 @@ const SettingsScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
               textColor={theme.colors.error}
               icon="hammer"
             >
-              Reset and Destroy Data
+              Reset & Destroy
             </Button>
           </View>
         </View>
 
-        {/* About Section */}
-        <View style={styles.section}>
+        {/* About */}
+        <View style={[styles.section, { backgroundColor: theme.colors.surface }]}>
           <Text variant="titleLarge" style={styles.sectionTitle}>
             About
           </Text>
-
           <View style={styles.aboutCard}>
             <Text variant="titleMedium" style={{ marginBottom: 8 }}>
               {APPCONFIG.displayName}
             </Text>
-            <Text variant="bodyMedium" style={styles.aboutText}>
-              Secure. Private. Yours.
-            </Text>
-            <Text
-              variant="bodySmall"
-              style={[styles.aboutText, { opacity: 0.7 }]}
-            >
-              Your journals are end-to-end encrypted
+            <Text style={styles.aboutText}>Secure. Private. Yours.</Text>
+            <Text style={[styles.aboutText, { opacity: 0.7 }]}>
+              Your journals are end-to-end encrypted.
             </Text>
           </View>
         </View>
       </ScrollView>
 
-      {/* Timeout Options Modal */}
+      {/* Keep these dialogs exactly as in your file */}
+      {/* Timeout options dialog */}
       <Portal>
         <Dialog
           visible={showTimeoutOptions}
@@ -313,12 +284,14 @@ const SettingsScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
             ))}
           </Dialog.Content>
           <Dialog.Actions>
-            <Button onPress={() => setShowTimeoutOptions(false)}>Cancel</Button>
+            <Button onPress={() => setShowTimeoutOptions(false)}>
+              Cancel
+            </Button>
           </Dialog.Actions>
         </Dialog>
       </Portal>
 
-      {/* Change Password Dialog */}
+      {/* Password change dialog — call helper, DO NOT remove */}
       {ResetPassword(
         showPasswordDialog,
         setShowPasswordDialog,
@@ -352,7 +325,11 @@ const styles = StyleSheet.create({
     paddingBottom: 32,
   },
   section: {
-    marginBottom: 32,
+    marginBottom: 24,
+    borderRadius: 16,
+    padding: 16,
+    // backgroundColor injected from theme in JSX
+    elevation: 2,
   },
   sectionTitle: {
     marginBottom: 20,
@@ -364,10 +341,11 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     alignItems: "center",
     marginBottom: 16,
-    paddingVertical: 12,
+    paddingVertical: 8,
   },
   settingInfo: {
     flex: 1,
+    marginRight: 12,
   },
   settingDescription: {
     opacity: 0.7,
@@ -386,17 +364,16 @@ const styles = StyleSheet.create({
   passwordButton: {
     flex: 1,
   },
-
-   timePickerContainer: {
+  resetButton: {
+    flex: 1,
+    borderColor: "transparent",
+  },
+  timePickerContainer: {
     marginTop: 8,
     marginBottom: 16,
   },
-  timeInput: {
-    minWidth: 100,
-  },
   aboutCard: {
     padding: 20,
-    marginBottom: 320,
     borderRadius: 12,
     alignItems: "center",
   },
@@ -407,12 +384,11 @@ const styles = StyleSheet.create({
   dialogInput: {
     marginBottom: 8,
   },
-  logoutButton: {
-    flex: 1,
-  },
 });
 
 export default SettingsScreen;
+
+
 function ResetPassword(
   showPasswordDialog: boolean,
   setShowPasswordDialog: React.Dispatch<React.SetStateAction<boolean>>,
