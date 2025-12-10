@@ -17,7 +17,7 @@ import {
 import {
   logout
 } from './src/stores/slices/authSlice';
-import { setIsExportInProgress, updateSettings } from './src/stores/slices/settingsSlice';
+import { setIsExportInProgress, setIsImagePickingInProgress, updateSettings } from './src/stores/slices/settingsSlice';
 
 function AppContent() {
   const appState = useRef(AppState.currentState);
@@ -66,9 +66,10 @@ function AppContent() {
 
         // ✅ CRITICAL FIX: Skip instant lock if export is in progress
         if (
-          isAuthenticated && 
-          settings.instantLockOnBackground && 
-          !settings.isExportInProgress // ✅ NEW CONDITION
+          isAuthenticated 
+          && settings.instantLockOnBackground  
+          && !settings.isExportInProgress // ✅ NEW CONDITION
+          && !settings.isImagePickingInProgress // ✅ NEW CONDITION
         ) {
           console.log('🔒 INSTANT LOCK: Locking app immediately');
           dispatch(logout());
@@ -83,6 +84,13 @@ function AppContent() {
         if (settings.isExportInProgress) {
           console.log('📤 EXPORT COMPLETE: Clearing export flag');
           dispatch(setIsExportInProgress(false));
+        }
+
+
+        // ✅ Clear export flag when returning to foreground
+        if (settings.isImagePickingInProgress) {
+          console.log('📤 Image picking COMPLETE: Clearing isImagePickingInProgress flag');
+          dispatch(setIsImagePickingInProgress(false));
         }
 
         if (isAuthenticated && backgroundTimeRef.current !== null && !settings.instantLockOnBackground) {
@@ -108,6 +116,7 @@ function AppContent() {
     settings.autoLockTimeout, 
     settings.instantLockOnBackground,
     settings.isExportInProgress, // ✅ NEW DEPENDENCY
+    settings.isImagePickingInProgress, // ✅ NEW DEPENDENCY
     dispatch
   ]);
 

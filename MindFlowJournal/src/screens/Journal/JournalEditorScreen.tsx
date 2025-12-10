@@ -1,3 +1,4 @@
+import { setIsImagePickingInProgress } from "@/src/stores/slices/settingsSlice";
 import { getMarkdownStyles } from "@/src/utils/markdownStyles";
 import { useFocusEffect } from "@react-navigation/native";
 import * as ImagePicker from "expo-image-picker";
@@ -79,6 +80,8 @@ const JournalEditorScreen: React.FC<{ navigation: any; route: any }> = ({
 
   const handlePickImage = async () => {
     try {
+
+      dispatch (setIsImagePickingInProgress(true))
       const result = await ImagePicker.launchImageLibraryAsync({
         mediaTypes: ["images"],
         allowsEditing: false,
@@ -86,7 +89,9 @@ const JournalEditorScreen: React.FC<{ navigation: any; route: any }> = ({
         quality: 1,
         // style: "contain",
       });
-
+      
+      dispatch (setIsImagePickingInProgress(false))
+      
       if (!result.canceled && result.assets[0]) {
         setIsCompressingImage(true);
         const selectedUri = result.assets[0].uri;

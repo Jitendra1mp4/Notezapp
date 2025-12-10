@@ -152,7 +152,7 @@ const JournalListScreen: React.FC<{ navigation: any; route: any }> = ({
     } finally {
       setIsExporting(false);
       setShowExportModal(false);
-            dispatch(setIsExportInProgress(false)); // ✅ CLEAR FLAG AFTER EXPORT
+      dispatch(setIsExportInProgress(false)); // ✅ CLEAR FLAG AFTER EXPORT
 
     }
   };

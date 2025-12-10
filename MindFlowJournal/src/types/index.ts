@@ -28,6 +28,7 @@ export type AppSettings = {
   autoLockTimeout: number;
   instantLockOnBackground: boolean;
   isExportInProgress: boolean; // ✅ NEW
+  isImagePickingInProgress: boolean; // ✅ NEW
 };
 
 
