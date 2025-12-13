@@ -333,7 +333,7 @@ class CryptoManager {
   static initializeVault(
     password: string,
     qaPairs: QAPair[]
-  ): { vault: Vault; recoveryKey: string } {
+  ): { vault: Vault; recoveryKey: string, dk:string } {
     if (qaPairs.length !== 3) {
       throw new Error('Exactly 3 security question-answer pairs required');
     }
@@ -398,7 +398,7 @@ class CryptoManager {
       updated_at: now,
     };
 
-    return { vault, recoveryKey };
+     return { vault, recoveryKey, dk };
   }
 
   /**

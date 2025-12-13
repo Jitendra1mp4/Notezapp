@@ -1,7 +1,8 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import { ScrollView, StyleSheet, View } from 'react-native';
+import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, View } from 'react-native';
 import {
   Button,
+  Card,
   Chip,
   HelperText,
   Text,
@@ -25,6 +26,7 @@ import {
   setEncryptionKey,
 } from '../../stores/slices/authSlice';
 
+import APP_CONFIG from '@/src/config/appConfig';
 import { QAPair } from '../../types/crypto';
 import { PREDEFINED_SECURITY_QUESTIONS } from '../../utils/securityQuestions';
 
@@ -112,7 +114,7 @@ const SignupScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
       // - Master Data Key (DK)
       // - Three key wraps (password, security answers, recovery key)
       // - Three salts for key derivation
-      const { vault, recoveryKey } = CryptoManager.initializeVault(
+      const { vault, recoveryKey , dk} = CryptoManager.initializeVault(
         password,
         qaPairs
       );
@@ -131,8 +133,8 @@ const SignupScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
 
       // 7. Store the DK in context (user is now logged in with this key)
       // Decrypt DK using password for immediate access
-      const { dk } = CryptoManager.unlockWithPassword(vault, password);
-      dispatch(setEncryptionKey(dk)); // ✅ Use Redux instead of context
+      // const { dk } = CryptoManager.unlockWithPassword(vault, password);
+      dispatch(setEncryptionKey(dk)); 
 
       // 8. Show recovery key to user and ask them to save it
       Alert.alert(
@@ -172,199 +174,193 @@ const SignupScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
   const controlDisabled = isLoading;
 
   return (
-    <SafeAreaView
-      style={[styles.container, { backgroundColor: theme.colors.background }]}
-    >
-      <ScrollView contentContainerStyle={styles.content}>
-        <Text variant="headlineMedium" style={styles.title}>
-          Create Your Password
-        </Text>
-        <Text variant="bodyMedium" style={styles.subtitle}>
-          Your password protects all your journal entries with encryption
-        </Text>
-
-        <TextInput
-          label="Password 🔑"
-          value={password}
-          onChangeText={setPassword}
-          secureTextEntry={!showPassword}
-          mode="outlined"
-          style={styles.input}
-          disabled={controlDisabled}
-          right={
-            <TextInput.Icon
-              icon={showPassword ? 'eye-off' : 'eye'}
-              onPress={() => setShowPassword(!showPassword)}
-              disabled={controlDisabled}
-            />
-          }
-        />
-        <HelperText type="info" visible={password.length > 0}>
-          {isPasswordValid
-            ? '✓ Password is strong enough'
-            : '✗ Password must be at least 8 characters'}
-        </HelperText>
-
-        <TextInput
-          label="Confirm Password 🔑"
-          value={confirmPassword}
-          onChangeText={setConfirmPassword}
-          secureTextEntry={!showConfirmPassword}
-          mode="outlined"
-          disabled={controlDisabled}
-          style={styles.input}
-          right={
-            <TextInput.Icon
-              icon={showConfirmPassword ? 'eye-off' : 'eye'}
-              onPress={() => setShowConfirmPassword(!showConfirmPassword)}
-              disabled={controlDisabled}
-            />
-          }
-        />
-        <HelperText
-          type={passwordsMatch ? 'info' : 'error'}
-          visible={confirmPassword.length > 0}
+    <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]} edges={['bottom']}>
+      <KeyboardAvoidingView
+        style={styles.flex}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        keyboardVerticalOffset={Platform.OS === 'ios' ? 60 : 0}
+      >
+        <ScrollView
+          contentContainerStyle={styles.content}
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
         >
-          {passwordsMatch ? '✓ Passwords match' : '✗ Passwords do not match'}
-        </HelperText>
-
-        <View style={styles.separator} />
-
-        <Text variant="titleMedium" style={styles.sectionTitle}>
-          Security Questions
-        </Text>
-        <Text variant="bodySmall" style={styles.sectionSubtitle}>
-          Select 3 questions to help you recover your account if you forget your password
-        </Text>
-
-        <View style={styles.questionsContainer}>
-          {PREDEFINED_SECURITY_QUESTIONS.map(q => (
-            <Chip
-              key={q.id}
-              selected={selectedQuestions.includes(q.id)}
-              onPress={() => toggleQuestionSelection(q.id)}
-              style={styles.questionChip}
-              mode="outlined"
-              disabled={controlDisabled}
-            >
-              {q.question}
-            </Chip>
-          ))}
-        </View>
-
-        {selectedQuestions.length > 0 && (
-          <View style={styles.answersContainer}>
-            <Text variant="titleSmall" style={styles.answersTitle}>
-              Your Answers ({selectedQuestions.length}/3)
+          {/* Header */}
+          <View style={styles.header}>
+            <Text variant="displaySmall" style={[styles.appTitle, { color: theme.colors.onBackground }]}>
+              {APP_CONFIG.displayName}
             </Text>
-            {selectedQuestions.map(qId => {
-              const question = PREDEFINED_SECURITY_QUESTIONS.find(
-                q => q.id === qId
-              );
-              return (
-                <View key={qId}>
-                  <Text variant="bodySmall" style={styles.questionText}>
-                    {question?.question}
-                  </Text>
-                  <TextInput
-                    disabled={controlDisabled}
-                    value={answers[qId] || ''}
-                    onChangeText={text =>
-                      setAnswers({ ...answers, [qId]: text })
-                    }
-                    mode="outlined"
-                    style={styles.answerInput}
-                    placeholder="Your answer"
-                  />
-                </View>
-              );
-            })}
+            <Text variant="bodyMedium" style={[styles.subtitle, { color: theme.colors.onSurfaceVariant }]}>
+              Create a secure vault for your journals.
+            </Text>
           </View>
-        )}
 
-        <Button
-          mode="contained"
-          onPress={handleSignup}
-          style={styles.button}
-          disabled={!canSubmit || controlDisabled}
-          loading={isLoading}
-          accessibilityState={{ busy: isLoading }}
-        >
-          {isLoading ? '🔏 Creating secure environment...' : '🔒 Create Account'}
-        </Button>
+          {/* Password section */}
+          <Card style={[styles.card, { backgroundColor: theme.colors.surface }]} mode="elevated">
+            <Card.Content>
+              <Text variant="titleLarge" style={styles.sectionTitle}>Create password</Text>
 
-        <Button
-          mode="text"
-          onPress={() => navigation.navigate("Login")}
-          style={styles.link}
-          disabled={controlDisabled}
-        >
-          Already Setup? Login
-        </Button>
-      </ScrollView>
+              <TextInput
+                label="Password"
+                value={password}
+                onChangeText={setPassword}
+                secureTextEntry={!showPassword}
+                mode="outlined"
+                disabled={controlDisabled}
+                style={styles.input}
+                left={<TextInput.Icon icon="lock-outline" disabled={controlDisabled} />}
+                right={
+                  <TextInput.Icon
+                    icon={showPassword ? 'eye-off' : 'eye'}
+                    onPress={() => setShowPassword(!showPassword)}
+                    disabled={controlDisabled}
+                  />
+                }
+              />
+              <HelperText type="info" visible={password.length > 0}>
+                {isPasswordValid ? 'Password looks good.' : 'Use at least 8 characters.'}
+              </HelperText>
+
+              <TextInput
+                label="Confirm password"
+                value={confirmPassword}
+                onChangeText={setConfirmPassword}
+                secureTextEntry={!showConfirmPassword}
+                mode="outlined"
+                disabled={controlDisabled}
+                style={styles.input}
+                left={<TextInput.Icon icon="lock-check-outline" disabled={controlDisabled} />}
+                right={
+                  <TextInput.Icon
+                    icon={showConfirmPassword ? 'eye-off' : 'eye'}
+                    onPress={() => setShowConfirmPassword(!showConfirmPassword)}
+                    disabled={controlDisabled}
+                  />
+                }
+              />
+              <HelperText type={passwordsMatch ? 'info' : 'error'} visible={confirmPassword.length > 0}>
+                {passwordsMatch ? 'Passwords match.' : 'Passwords do not match.'}
+              </HelperText>
+            </Card.Content>
+          </Card>
+
+          {/* Security Questions */}
+          <Card style={[styles.card, { backgroundColor: theme.colors.surface }]} mode="elevated">
+            <Card.Content>
+              <View style={styles.sectionHeaderRow}>
+                <Text variant="titleLarge" style={styles.sectionTitle}>Security questions</Text>
+                <Chip compact icon="shield-key-outline">
+                  {selectedQuestions.length}/3
+                </Chip>
+              </View>
+
+              <Text variant="bodySmall" style={[styles.sectionHint, { color: theme.colors.onSurfaceVariant }]}>
+                Select 3 questions to recover your account if you forget your password.
+              </Text>
+
+              <View style={styles.questionsWrap}>
+                {PREDEFINED_SECURITY_QUESTIONS.map((q) => {
+                  const selected = selectedQuestions.includes(q.id);
+                  return (
+                    <Chip
+                      key={q.id}
+                      selected={selected}
+                      onPress={() => toggleQuestionSelection(q.id)}
+                      disabled={controlDisabled}
+                      style={[
+                        styles.questionChip,
+                        {
+                          backgroundColor: selected ? theme.colors.primaryContainer : theme.colors.surfaceVariant,
+                          borderColor: theme.colors.outlineVariant,
+                        },
+                      ]}
+                      textStyle={{ color: selected ? theme.colors.onPrimaryContainer : theme.colors.onSurfaceVariant }}
+                      mode="outlined"
+                    >
+                      {q.question}
+                    </Chip>
+                  );
+                })}
+              </View>
+            </Card.Content>
+          </Card>
+
+          {/* Answers */}
+          {selectedQuestions.length > 0 && (
+            <Card style={[styles.card, { backgroundColor: theme.colors.surface }]} mode="elevated">
+              <Card.Content>
+                <Text variant="titleLarge" style={styles.sectionTitle}>Your answers</Text>
+                <Text variant="bodySmall" style={[styles.sectionHint, { color: theme.colors.onSurfaceVariant }]}>
+                  Answers are used only for recovery. Keep them memorable.
+                </Text>
+
+                {selectedQuestions.map((qId) => {
+                  const question = PREDEFINED_SECURITY_QUESTIONS.find((q) => q.id === qId);
+                  return (
+                    <View key={qId} style={styles.answerBlock}>
+                      <Text variant="labelLarge" style={{ color: theme.colors.onSurface }}>
+                        {question?.question}
+                      </Text>
+                      <TextInput
+                        value={answers[qId] ?? ''}
+                        onChangeText={(text) => setAnswers({ ...answers, [qId]: text })}
+                        mode="outlined"
+                        placeholder="Your answer"
+                        disabled={controlDisabled}
+                        style={styles.input}
+                      />
+                    </View>
+                  );
+                })}
+              </Card.Content>
+            </Card>
+          )}
+
+          {/* CTA */}
+          <Button
+            mode="contained"
+            onPress={handleSignup}
+            disabled={!canSubmit || controlDisabled}
+            loading={isLoading}
+            style={styles.cta}
+            contentStyle={styles.ctaContent}
+          >
+            {isLoading ? 'Creating secure vault...' : 'Create account'}
+          </Button>
+
+          <Button
+            mode="text"
+            onPress={() => navigation.navigate('Login')}
+            disabled={controlDisabled}
+            style={styles.link}
+          >
+            Already set up? Login
+          </Button>
+        </ScrollView>
+      </KeyboardAvoidingView>
     </SafeAreaView>
   );
 };
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-  content: {
-    padding: 20,
-  },
-  title: {
-    marginBottom: 8,
-  },
-  subtitle: {
-    marginBottom: 24,
-    opacity: 0.7,
-  },
-  input: {
-    marginBottom: 4,
-  },
-  separator: {
-    height: 24,
-  },
-  sectionTitle: {
-    marginTop: 8,
-    marginBottom: 4,
-  },
-  sectionSubtitle: {
-    marginBottom: 16,
-    opacity: 0.7,
-  },
-  questionsContainer: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    marginBottom: 16,
-  },
-  questionChip: {
-    margin: 4,
-  },
-  answersContainer: {
-    marginTop: 8,
-    marginBottom: 16,
-  },
-  answersTitle: {
-    marginBottom: 12,
-    fontWeight: 'bold',
-  },
-  questionText: {
-    marginTop: 12,
-    marginBottom: 4,
-    opacity: 0.8,
-  },
-  answerInput: {
-    marginBottom: 8,
-  },
-  button: {
-    marginTop: 24,
-    marginBottom: 16,
-  },
-  link: {
-    marginTop: 8,
-  },
+  flex: { flex: 1 },
+  container: { flex: 1 },
+  content: { padding: 16, paddingBottom: 28, gap: 12 },
+  header: { marginTop: 8, marginBottom: 8, alignItems: 'center' },
+  appTitle: { textAlign: 'center' },
+  subtitle: { textAlign: 'center', marginTop: 6 },
+  card: { borderRadius: 16 },
+  sectionHeaderRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  sectionTitle: { marginBottom: 8, fontWeight: '700' },
+  sectionHint: { marginBottom: 12 },
+  input: { marginBottom: 8 },
+  questionsWrap: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+  questionChip: { borderWidth: 1 },
+  answerBlock: { marginTop: 10 },
+  cta: { marginTop: 6, borderRadius: 14 },
+  ctaContent: { paddingVertical: 8 },
+  link: { marginTop: 6 },
 });
 
 export default SignupScreen;
+
