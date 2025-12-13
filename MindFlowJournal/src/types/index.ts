@@ -6,7 +6,7 @@ export type Journal = {
   title?: string;
   text: string;
   mood?: string;
-  images?: string[];
+  images?: string[]; // Now stores base64 strings instead of file paths
 };
 
 export type SecurityQuestion = {
@@ -32,9 +32,10 @@ export type RootStackParamList = {
   Main: undefined;
   Home: undefined;
   JournalList: undefined;
-  JournalEditor: { journalId?: string };
+  JournalEditor: { journalId?: string; selectedDate?: string }; // Updated
   JournalDetail: { journalId: string };
   Calendar: undefined;
   Export: undefined;
   Settings: undefined;
 };
+

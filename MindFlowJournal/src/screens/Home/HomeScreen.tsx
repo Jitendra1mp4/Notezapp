@@ -1,26 +1,145 @@
-import React from 'react';
-import { View, StyleSheet, ScrollView } from 'react-native';
-import { Card, Text, Button, useTheme } from 'react-native-paper';
+import React, { useEffect, useState } from 'react';
+import { View, StyleSheet, ScrollView, Animated } from 'react-native';
+import { Card, Text, Button, useTheme, Chip } from 'react-native-paper';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useAppSelector } from '../../stores/hooks';
+import { useAppSelector, useAppDispatch } from '../../stores/hooks';
+import { setJournals, setLongestStreak } from '../../stores/slices/journalsSlice'; // UPDATED
+import { useAuth } from '../../utils/authContext';
+import { listJournals } from '../../services/storageService';
+import { calculateLongestStreak } from '../../services/streakService'; // MAKE SURE THIS EXISTS
+import { format, subDays } from 'date-fns';
 
 const HomeScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
   const theme = useTheme();
+  const dispatch = useAppDispatch();
+  const { encryptionKey } = useAuth();
+
   const currentStreak = useAppSelector(state => state.journals.currentStreak);
+  const longestStreak = useAppSelector(state => state.journals.longestStreak); // GET FROM REDUX
+  const journals = useAppSelector(state => state.journals.journals);
+
+  const scaleAnim = React.useRef(new Animated.Value(1)).current;
+
+  useEffect(() => {
+    loadJournals();
+  }, [encryptionKey]);
+
+  useEffect(() => {
+    // Animate streak number on change
+    Animated.sequence([
+      Animated.spring(scaleAnim, {
+        toValue: 1.2,
+        useNativeDriver: true,
+      }),
+      Animated.spring(scaleAnim, {
+        toValue: 1,
+        useNativeDriver: true,
+      }),
+    ]).start();
+  }, [currentStreak]);
+
+  const loadJournals = async () => {
+    if (!encryptionKey) return;
+
+    try {
+      const loadedJournals = await listJournals(encryptionKey);
+      dispatch(setJournals(loadedJournals));
+      
+      // Calculate and store longest streak
+      const longest = calculateLongestStreak(loadedJournals);
+      dispatch(setLongestStreak(longest));
+    } catch (error) {
+      console.error('Error loading journals:', error);
+    }
+  };
+
+  // Get last 3 days of entries
+  const getLast3DaysJournals = () => {
+    const last3Days = [];
+    for (let i = 0; i < 3; i++) {
+      const date = subDays(new Date(), i);
+      const dateStr = format(date, 'yyyy-MM-dd');
+      const count = journals.filter(
+        j => format(new Date(j.date), 'yyyy-MM-dd') === dateStr
+      ).length;
+      last3Days.push({
+        date: format(date, 'MMM dd'),
+        count,
+        isToday: i === 0,
+      });
+    }
+    return last3Days;
+  };
+
+  const last3Days = getLast3DaysJournals();
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]}>
+    <SafeAreaView
+      style={[styles.container, { backgroundColor: theme.colors.background }]}
+    >
       <ScrollView contentContainerStyle={styles.content}>
+        {/* Streak Card */}
         <Card style={styles.card}>
           <Card.Content>
             <Text variant="headlineMedium">🔥 Current Streak</Text>
-            <Text variant="displayMedium" style={styles.streakNumber}>
-              {currentStreak}
-            </Text>
-            <Text variant="bodyMedium">days in a row</Text>
+            <Animated.View style={{ transform: [{ scale: scaleAnim }] }}>
+              <Text variant="displayLarge" style={styles.streakNumber}>
+                {currentStreak}
+              </Text>
+            </Animated.View>
+            <Text variant="bodyLarge">days in a row</Text>
+            <View style={styles.streakInfo}>
+              <Chip icon="trophy" compact>
+                Best: {longestStreak} days
+              </Chip>
+            </View>
           </Card.Content>
         </Card>
 
+        {/* Last 3 Days Status */}
+        <Card style={styles.card}>
+          <Card.Content>
+            <Text variant="titleLarge" style={styles.cardTitle}>
+              Recent Activity
+            </Text>
+            <View style={styles.daysRow}>
+              {last3Days.map((day, index) => (
+                <View key={index} style={styles.dayCard}>
+                  <Text variant="bodySmall" style={styles.dayLabel}>
+                    {day.isToday ? 'Today' : day.date}
+                  </Text>
+                  <Text
+                    variant="headlineMedium"
+                    style={[
+                      styles.dayCount,
+                      { color: day.count > 0 ? theme.colors.primary : theme.colors.outline },
+                    ]}
+                  >
+                    {day.count > 0 ? '✓' : '—'}
+                  </Text>
+                  <Text variant="bodySmall">
+                    {day.count} {day.count === 1 ? 'entry' : 'entries'}
+                  </Text>
+                </View>
+              ))}
+            </View>
+          </Card.Content>
+        </Card>
+
+        {/* Stats Card */}
+        <Card style={styles.card}>
+          <Card.Content>
+            <Text variant="titleLarge" style={styles.cardTitle}>
+              Your Journals
+            </Text>
+            <Text variant="displayMedium" style={styles.statNumber}>
+              {journals.length}
+            </Text>
+            <Text variant="bodyMedium">total entries</Text>
+          </Card.Content>
+        </Card>
+
+        {/* Quick Actions */}
         <Card style={styles.card}>
           <Card.Content>
             <Text variant="titleLarge" style={styles.cardTitle}>
@@ -92,6 +211,32 @@ const styles = StyleSheet.create({
     marginVertical: 8,
     fontWeight: 'bold',
   },
+  streakInfo: {
+    marginTop: 12,
+    alignItems: 'center',
+  },
+  daysRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+  },
+  dayCard: {
+    alignItems: 'center',
+    padding: 12,
+  },
+  dayLabel: {
+    marginBottom: 8,
+    opacity: 0.7,
+  },
+  dayCount: {
+    fontWeight: 'bold',
+    marginBottom: 4,
+  },
+  statNumber: {
+    textAlign: 'center',
+    fontSize: 48,
+    fontWeight: 'bold',
+    marginVertical: 8,
+  },
   actionButton: {
     marginBottom: 12,
   },
@@ -103,4 +248,3 @@ const styles = StyleSheet.create({
 });
 
 export default HomeScreen;
-

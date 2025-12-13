@@ -1,28 +1,255 @@
-import React from 'react';
-import { View, StyleSheet } from 'react-native';
-import { Text, Button, useTheme } from 'react-native-paper';
+import { formatDate } from 'date-fns';
+import React, { useState } from 'react';
+import { ScrollView, StyleSheet, View } from 'react-native';
+import {
+  Button,
+  Card,
+  Checkbox,
+  Chip,
+  ProgressBar,
+  Text,
+  TextInput,
+  useTheme,
+} from 'react-native-paper';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import {
+  downloadTextFile,
+  exportAsJSON,
+  exportAsPDF,
+  exportAsText,
+  shareFile,
+} from '../../services/exportService';
+import { useAppSelector } from '../../stores/hooks';
+import { Alert } from '../../utils/alert';
+import { useAuth } from '../../utils/authContext';
 
 const ExportScreen: React.FC = () => {
   const theme = useTheme();
+  const { encryptionKey } = useAuth();
+  const journals = useAppSelector(state => state.journals.journals);
+
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
+  const [selectedAll, setSelectedAll] = useState(true);
+  const [isExporting, setIsExporting] = useState(false);
+
+  const getFilteredJournals = () => {
+    if (selectedAll || (!startDate && !endDate)) {
+      return journals;
+    }
+
+    return journals.filter(journal => {
+      const journalDate = new Date(journal.date);
+      const start = startDate ? new Date(startDate) : null;
+      const end = endDate ? new Date(endDate) : null;
+
+      if (start && end) {
+        return journalDate >= start && journalDate <= end;
+      } else if (start) {
+        return journalDate >= start;
+      } else if (end) {
+        return journalDate <= end;
+      }
+      return true;
+    });
+  };
+
+  const handleExport = async (format: 'json' | 'txt' | 'pdf') => {
+    if (!encryptionKey) {
+      Alert.alert('Error', 'Encryption key not found. Please log in again.');
+      return;
+    }
+
+    const filteredJournals = getFilteredJournals();
+
+    if (filteredJournals.length === 0) {
+      Alert.alert('No Journals', 'No journals found to export with the selected filters.');
+      return;
+    }
+
+    setIsExporting(true);
+
+    try {
+      const timestamp = formatDate(new Date(), 'yyyy-MM-dd-HHmmss');
+      let filename = '';
+      let content = '';
+      let uri = '';
+
+      switch (format) {
+        case 'json':
+          filename = `mindflow-journals-${timestamp}.json`;
+          content = await exportAsJSON(filteredJournals);
+          downloadTextFile(content, filename);
+          break;
+
+        case 'txt':
+          filename = `mindflow-journals-${timestamp}.txt`;
+          content = await exportAsText(filteredJournals);
+          downloadTextFile(content, filename);
+          break;
+
+        case 'pdf':
+          filename = `mindflow-journals-${timestamp}.pdf`;
+          uri = await exportAsPDF(filteredJournals);
+          await shareFile(uri, filename);
+          break;
+      }
+
+      Alert.alert(
+        'Success',
+        `Exported ${filteredJournals.length} journal(s) as ${format.toUpperCase()}`
+      );
+    } catch (error) {
+      console.error('Export error:', error);
+      Alert.alert('Error', 'Failed to export journals. Please try again.');
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
+  const filteredCount = getFilteredJournals().length;
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]}>
-      <View style={styles.content}>
-        <Text variant="headlineMedium">Export Journals</Text>
-        <Text variant="bodyMedium" style={styles.description}>
-          Export functionality coming in Sprint 6
-        </Text>
-        <Button mode="outlined" disabled style={styles.button}>
-          Export as JSON
-        </Button>
-        <Button mode="outlined" disabled style={styles.button}>
-          Export as TXT
-        </Button>
-        <Button mode="outlined" disabled style={styles.button}>
-          Export as PDF
-        </Button>
-      </View>
+    <SafeAreaView
+      style={[styles.container, { backgroundColor: theme.colors.background }]}
+    >
+      <ScrollView contentContainerStyle={styles.content}>
+        <Card style={styles.card}>
+          <Card.Content>
+            <Text variant="titleLarge" style={styles.title}>
+              Export Your Journals
+            </Text>
+            <Text variant="bodyMedium" style={styles.description}>
+              Export your journal entries in various formats. You can export all entries or filter by date range.
+            </Text>
+          </Card.Content>
+        </Card>
+
+        {/* Date Range Filter */}
+        <Card style={styles.card}>
+          <Card.Content>
+            <Text variant="titleMedium" style={styles.sectionTitle}>
+              Select Date Range
+            </Text>
+
+            <View style={styles.checkboxRow}>
+              <Checkbox
+                status={selectedAll ? 'checked' : 'unchecked'}
+                onPress={() => setSelectedAll(!selectedAll)}
+              />
+              <Text
+                variant="bodyLarge"
+                onPress={() => setSelectedAll(!selectedAll)}
+              >
+                Export All Journals
+              </Text>
+            </View>
+
+            {!selectedAll && (
+              <View style={styles.dateInputs}>
+                <TextInput
+                  label="Start Date (YYYY-MM-DD)"
+                  value={startDate}
+                  onChangeText={setStartDate}
+                  mode="outlined"
+                  style={styles.dateInput}
+                  placeholder="2025-01-01"
+                />
+                <TextInput
+                  label="End Date (YYYY-MM-DD)"
+                  value={endDate}
+                  onChangeText={setEndDate}
+                  mode="outlined"
+                  style={styles.dateInput}
+                  placeholder="2025-12-31"
+                />
+              </View>
+            )}
+
+            <Chip icon="file-document" style={styles.countChip}>
+              {filteredCount} journal(s) will be exported
+            </Chip>
+          </Card.Content>
+        </Card>
+
+        {/* Export Options */}
+        <Card style={styles.card}>
+          <Card.Content>
+            <Text variant="titleMedium" style={styles.sectionTitle}>
+              Export Format
+            </Text>
+
+            <Button
+              mode="contained"
+              icon="code-json"
+              onPress={() => handleExport('json')}
+              style={styles.exportButton}
+              disabled={isExporting || filteredCount === 0}
+            >
+              Export as JSON
+            </Button>
+            <Text variant="bodySmall" style={styles.formatDesc}>
+              Structured data format, good for backup and data transfer
+            </Text>
+
+            <Button
+              mode="contained"
+              icon="file-document-outline"
+              onPress={() => handleExport('txt')}
+              style={styles.exportButton}
+              disabled={isExporting || filteredCount === 0}
+            >
+              Export as TXT
+            </Button>
+            <Text variant="bodySmall" style={styles.formatDesc}>
+              Plain text format, easy to read and edit
+            </Text>
+
+            <Button
+              mode="contained"
+              icon="file-pdf-box"
+              onPress={() => handleExport('pdf')}
+              style={styles.exportButton}
+              disabled={isExporting || filteredCount === 0}
+            >
+              Export as PDF
+            </Button>
+            <Text variant="bodySmall" style={styles.formatDesc}>
+              Professional format, perfect for printing or archiving
+            </Text>
+
+            {isExporting && (
+              <View style={styles.loadingContainer}>
+                <ProgressBar indeterminate />
+                <Text variant="bodySmall" style={styles.loadingText}>
+                  Exporting journals...
+                </Text>
+              </View>
+            )}
+          </Card.Content>
+        </Card>
+
+        {/* Info Card */}
+        <Card style={styles.card}>
+          <Card.Content>
+            <Text variant="titleMedium" style={styles.sectionTitle}>
+              ℹ️ Important Notes
+            </Text>
+            <Text variant="bodySmall" style={styles.infoText}>
+              • Exported files do not include encryption
+            </Text>
+            <Text variant="bodySmall" style={styles.infoText}>
+              • Images are referenced but not embedded in exports
+            </Text>
+            <Text variant="bodySmall" style={styles.infoText}>
+              • Keep exported files secure as they contain your personal data
+            </Text>
+            <Text variant="bodySmall" style={styles.infoText}>
+              • PDF export works best on mobile devices
+            </Text>
+          </Card.Content>
+        </Card>
+      </ScrollView>
     </SafeAreaView>
   );
 };
@@ -32,16 +259,57 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   content: {
-    flex: 1,
     padding: 16,
   },
+  card: {
+    marginBottom: 16,
+  },
+  title: {
+    marginBottom: 12,
+    fontWeight: 'bold',
+  },
   description: {
+    opacity: 0.7,
+    lineHeight: 20,
+  },
+  sectionTitle: {
+    marginBottom: 16,
+    fontWeight: 'bold',
+  },
+  checkboxRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  dateInputs: {
     marginTop: 16,
-    marginBottom: 32,
+  },
+  dateInput: {
+    marginBottom: 12,
+  },
+  countChip: {
+    alignSelf: 'flex-start',
+    marginTop: 12,
+  },
+  exportButton: {
+    marginBottom: 8,
+  },
+  formatDesc: {
+    opacity: 0.6,
+    marginBottom: 16,
+    paddingLeft: 4,
+  },
+  loadingContainer: {
+    marginTop: 16,
+  },
+  loadingText: {
+    marginTop: 8,
+    textAlign: 'center',
     opacity: 0.7,
   },
-  button: {
-    marginBottom: 12,
+  infoText: {
+    marginBottom: 8,
+    opacity: 0.7,
   },
 });
 

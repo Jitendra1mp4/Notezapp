@@ -1,0 +1,299 @@
+Build **MindFlow Journal** (React Native / Expo)
+
+You are an experienced React Native developer agent. Build the **MindFlow Journal** app step-by-step using **Expo** and the feature list we agreed on (v1.0 core features only). Work sprint-wise, create branches/PRs, write tests and docs, and commit after each small, testable milestone.
+
+**Important constraints for your replies and actions**
+
+* Do **not** output the contents of `package.json`.
+* When you need to add dependencies, **only** provide the install commands (e.g. `npm install <package>` or `npx <tool>`). Do **not** pin versions — let npm choose the latest compatible versions.
+* Work incrementally. After finishing each sprint subtask, create a PR and mark it ready for review. Include tests and a clear description in the PR.
+* Keep commits small and focused. Follow this commit message format: `feat(scope): short description`, `fix(scope): short description`, `chore(ci): short description`, `test(scope): add tests for ...`.
+* Do not be overwhelming: break tasks into small steps, and produce runnable output for each step.
+
+---
+
+## Project Basics (one-time setup)
+
+1. Initialize project:
+
+   * `npx create-expo-app MindFlowJournal`
+   * `cd MindFlowJournal`
+2. Initialize git, add remote, create `main` branch, create `develop` branch:
+
+   * `git init`
+   * `git checkout -b develop`
+3. Basic installs (provide these commands to run; do not write package.json):
+
+   * Navigation & safe-area:
+     `npm install @react-navigation/native @react-navigation/native-stack react-native-safe-area-context`
+   * State management (Redux Toolkit):
+     `npm install @reduxjs/toolkit react-redux`
+   * Async storage & filesystem:
+     `npm install @react-native-async-storage/async-storage expo-file-system`
+   * Encryption & key derivation:
+     `npm install crypto-js`
+   * UI library & icons:
+     `npm install react-native-paper react-native-vector-icons`
+   * Image picker & manipulator:
+     `npm install expo-image-picker expo-image-manipulator`
+   * Notifications:
+     `npm install expo-notifications`
+   * Calendar:
+     `npm install react-native-calendars`
+   * PDF/export/share utilities:
+     `npm install expo-print expo-sharing`
+   * Utilities (uuid, date-fns):
+     `npm install uuid date-fns`
+   * Linting and formatting (dev):
+     `npm install --save-dev eslint prettier eslint-config-prettier`
+   * Testing:
+     `npm install --save-dev jest @testing-library/react-native`
+   * Any additional utilities you need, install similarly with `npm install <package>` (no versions).
+4. Initialize basic tooling:
+
+   * `npx eslint --init` (or configure ESLint and Prettier per team conventions).
+   * Add `jest` setup files and basic test runner config (do not print package.json).
+
+---
+
+## Project structure (suggested)
+
+Create this folder layout and add placeholder files for each module:
+
+```
+/src
+  /assets
+  /components
+  /screens
+    - Auth
+    - Home
+    - Journal
+    - Calendar
+    - Export
+    - Settings
+  /stores
+  /services
+    - encryptionService.ts
+    - storageService.ts
+    - notificationService.ts
+    - exportService.ts
+  /utils
+  /navigation
+  /tests
+```
+
+Create TypeScript types (use TS if comfortable) or JavaScript with JSDoc. Prefer TypeScript if possible.
+
+---
+
+## Security & Encryption design (implement now)
+
+Implement an encryption layer used by all storage operations.
+
+**Design notes**
+
+* Derive an encryption key from the user password using PBKDF2 or a secure KDF. Use `crypto-js` to implement PBKDF2 and AES encryption.
+* Store the salt and other KDF metadata in AsyncStorage (encrypted if possible). Never store the plaintext password.
+* All journal JSON blobs must be encrypted before writing to disk. Images must be stored in the file system and encrypted (either encrypt bytes or store as encrypted base64).
+* Implement `encryptionService` with these functions:
+
+  * `deriveKeyFromPassword(password: string, salt?: string): { key, salt }`
+  * `encryptJSON(key, jsonObject): string` → returns ciphertext (base64 or hex)
+  * `decryptJSON(key, ciphertext): object`
+  * `reEncryptAllData(oldKey, newKey)` → used when user changes password
+* Implement `storageService` with:
+
+  * `saveJournal(journalObj, key)`
+  * `getJournal(id, key)`
+  * `listJournals(key)`
+  * `deleteJournal(id, key)`
+  * `exportJournals(filter, key)`
+* On password reset via security questions, verify answers, then allow setting new password and re-encrypt all data.
+
+**Acceptance**: encryptionService has unit tests proving encrypt/decrypt roundtrip, and storageService saves/reads encrypted data correctly.
+
+---
+
+## Data model (v1)
+
+Journal object (internal, before encryption):
+
+```ts
+type Journal = {
+  id: string;             // uuid
+  date: string;           // ISO date
+  createdAt: string;
+  updatedAt: string;
+  title?: string;
+  text: string;
+  mood?: string;
+  images?: string[];      // file URIs (encrypted on disk)
+}
+```
+
+Security questions structure:
+
+```ts
+type SecurityQ = {
+  questionId: string;
+  question: string;
+  answerHash: string; // store securely (encrypted)
+}
+```
+
+---
+
+## Sprint-by-sprint plan (break each sprint into small tasks — create PR per task)
+
+Each sprint is 1 week. For each sprint do: create a branch `sprint-X/<feature>`, open PR to `develop`, include tests, and when merged tag milestone.
+
+### Sprint 1 — Setup & Core Architecture
+
+**Goal:** Project skeleton, navigation, state, theme.
+**Tasks (small):**
+
+* Create screens and routing skeleton: Auth flow, Home, Journal list, Journal editor, Calendar, Settings, Export.
+* Integrate Redux Toolkit store with empty slices for `auth`, `journals`, `settings`.
+* Configure theme provider (react-native-paper) and safe-area.
+* Add ESLint/Prettier config, Husky pre-commit hooks (optional).
+  **DO**: Commit after each screen scaffold and store slice.
+  **Acceptance**: App runs, navigates between placeholder screens, lint passes.
+
+### Sprint 2 — Authentication & Recovery
+
+**Goal:** Password setup, login, security questions, KDF.
+**Tasks:**
+
+* Implement Signup flow: password + confirm + set 2–3 security questions.
+* Save KDF salt and derived key material in secure AsyncStorage (not plaintext password).
+* Implement Login screen: derive key and unlock app.
+* Implement “Forgot Password” flow: prompt security questions → on success, allow new password and reencrypt.
+* Add unit tests for KDF and recovery flows.
+  **Acceptance**: Able to create password, lock/unlock app, and reset password via correct security answers; tests passing.
+
+### Sprint 3 — Journal CRUD (text)
+
+**Goal:** Core journaling (create, read, update, delete) with encryption.
+**Tasks:**
+
+* Implement Journal Editor screen with Save and Back — both save.
+* Implement storageService to encrypt and persist journals.
+* Implement Journal List with color-coded UI (basic rule: alternate or mood-based placeholder).
+* Implement Journal detail screen and edit flow.
+* Add unit tests for save/read/delete operations.
+  **Acceptance**: Create/edit/delete journals; data is persisted encrypted; UI shows list.
+
+### Sprint 4 — Images & Enhanced Schema
+
+**Goal:** Image attachments, compression, secure storage.
+**Tasks:**
+
+* Add image picker UI using `expo-image-picker`.
+* Compress/crop images with `expo-image-manipulator` before storage.
+* Encrypt image bytes or store as encrypted base64 in filesystem.
+* Update journal model and UI to display images (thumbnail + open full).
+* Add edge-case tests (large image, corrupted file handling).
+  **Acceptance**: Attach 1+ images to a journal, images persist and display; encrypted on disk.
+
+### Sprint 5 — Calendar, Streaks, Notifications & Status View
+
+**Goal:** Engagement features.
+**Tasks:**
+
+* Implement streak algorithm service: compute consecutive days from journal dates.
+* Create Home screen showing current streak (+ small animation on increment).
+* Implement last-3-days status carousel (after save show modal/carousel).
+* Integrate `expo-notifications` to schedule a daily local notification; implement settings toggle for time and enable/disable.
+* Implement calendar screen using `react-native-calendars` — highlight dates with entries and open journal on tap.
+* Add unit tests for streak calculations and notification scheduling.
+  **Acceptance**: Calendar highlights dates, streak displays correctly, notifications schedule and can be toggled.
+
+### Sprint 6 — Export, Settings, QA & Release Prep
+
+**Goal:** Export, settings, polishing, CI and EAS build readiness.
+**Tasks:**
+
+* Export service: export selected/all journals to JSON, TXT, PDF. Use `expo-print` + `expo-sharing` for PDF and sharing.
+* Implement selective export by date range.
+* Build Settings screen: change password, change security questions, toggle notifications and theme.
+* Add final E2E checks, run performance profiling (simple).
+* Prepare GitHub Actions workflow that runs lint, tests, and builds (for PRs).
+* Create EAS build config and produce a test build.
+  **Acceptance**: Export works; settings persist; CI pipeline passing; ability to generate test build.
+
+---
+
+## Testing & CI
+
+* Unit tests: Jest + @testing-library/react-native for components and services. Aim for coverage on encryption/storage/streak logic.
+* Add at least one integration test for creating a journal and verifying it appears in calendar and list.
+* GitHub Actions config:
+
+  * On PR: run `npm ci`, `npm run lint`, `npm test`.
+  * On merge to `main`: trigger EAS build. (Provide commands; do not print secrets.)
+* Add `README` with setup, commands, environment variables, and how to run tests.
+
+---
+
+## Coding standards & PR rules
+
+* Use TypeScript (recommended) or well-documented JS.
+* Each PR must include:
+
+  * Short description of change
+  * What to test manually
+  * Unit tests added/updated
+  * Screenshots or GIFs for UI changes
+* Keep files modular and small. Prefer pure functions for services (encryption, storage).
+
+---
+
+## Error handling & edge cases
+
+* If decryption fails (wrong key), show clear error and offer password recovery.
+* When re-encrypting data on password change, run in background with progress, retry on failure, and ensure no data loss (backup ciphertext before re-encrypt).
+* For image storage, handle low-disk cases gracefully and surface errors to user with retry.
+
+---
+
+## Deliverables per sprint (explicit)
+
+For each sprint, produce these artifacts and attach to PR:
+
+* Code changes (branch)
+* Unit tests covering new logic
+* README update (new features)
+* A short changelog entry in repo `CHANGELOG.md`
+* At least one screenshot or short recording of the functionality
+
+---
+
+## Final acceptance criteria for v1.0
+
+* App bootstraps and requires password on first open.
+* Create/edit/delete journals with encrypted storage.
+* Attach and view images in a journal.
+* Calendar shows inked days and opens journal entries.
+* Streak calculation works and displays on home screen.
+* Daily local notification works and is toggleable.
+* Export to JSON/TXT/PDF works for selected ranges.
+* Password recovery via security questions works and re-encrypts data.
+* CI runs lint and tests on PRs; a test build can be produced.
+
+---
+
+## Extra agent instructions (how to report back)
+
+* After each small task, print:
+
+  1. Branch name and PR title you created.
+  2. Short summary of what you changed.
+  3. Commands to run locally to test the change (e.g. `npm start`, `npm test`, `expo prebuild`).
+  4. Any manual testing steps for UI changes.
+* If a step requires secrets or user input (push keys, app store credentials, EAS credentials), stop and clearly indicate what is needed. Do not include secrets in code or chat.
+
+---
+
+That’s it. Start with **Sprint 1** tasks: initialize the project, scaffold screens, and set up navigation and state. Provide the exact `npm` or `npx` commands you ran or that the human developer should run (remember: do **not** provide package.json content nor pin package versions). After finishing Sprint 1 sub-tasks, open the PR and report back with the 4 items listed under "Extra agent instructions."
+
+Begin.
