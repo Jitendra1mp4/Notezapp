@@ -104,8 +104,9 @@ return (
             Theme
           </Text>
           <View style={styles.settingRow}>
+            <View style={{flex:1, flexDirection:"column", gap:10}}>
             <View style={styles.settingInfo}>
-              <Text variant="titleMedium">Theme</Text>
+              {/* <Text variant="titleMedium">Theme</Text> */}
               <Text style={styles.settingDescription}>
                 App appearance mode
               </Text>
@@ -122,6 +123,7 @@ return (
                   {opt.charAt(0).toUpperCase() + opt.slice(1)}
                 </Button>
               ))}
+            </View>
             </View>
           </View>
         </View>
@@ -353,6 +355,7 @@ const styles = StyleSheet.create({
   },
   themeButtons: {
     flexDirection: "row",
+    justifyContent:"space-between",
     gap: 8,
   },
   themeButton: {
