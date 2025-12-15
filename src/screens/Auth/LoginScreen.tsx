@@ -149,7 +149,7 @@ const LoginScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
             style={[styles.card, { backgroundColor: theme.colors.surface }]}
           >
             <Card.Content style={styles.cardContent}>
-              {!vaultReady && (
+              {!vaultReady && isLoading && (
                 <View style={styles.loadingBox}>
                   <ProgressBar indeterminate />
                   <Text
