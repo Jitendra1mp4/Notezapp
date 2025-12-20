@@ -13,7 +13,6 @@ export interface DerivedKey {
  */
 export const generateSalt = (): string => {
   const salt = CryptoJS.lib.WordArray.random(APP_CONFIG.SALT_SIZE);
-  // return "jitendra kumar s"//salt.toString(CryptoJS.enc.Hex);
   return salt.toString(CryptoJS.enc.Hex);
 };
 
@@ -71,12 +70,12 @@ export const encryptJSON = (key: string, data: any): string => {
 /**
  * Decrypt a ciphertext back to JSON object
  * @param key - Encryption key (hex string)
- * @param ciphertext - Encrypted data (base64 string)
+ * @param cipherText - Encrypted data (base64 string)
  * @returns Decrypted object
  */
-export const decryptJSON = (key: string, ciphertext: string): any => {
+export const decryptJSON = (key: string, cipherText: string): any => {
   try {
-    const decrypted = CryptoJS.AES.decrypt(ciphertext, key);
+    const decrypted = CryptoJS.AES.decrypt(cipherText, key);
     const jsonString = decrypted.toString(CryptoJS.enc.Utf8);
     
     if (!jsonString) {
