@@ -439,7 +439,7 @@ const styles = StyleSheet.create({
   header: { marginTop: 8, marginBottom: 8, alignItems: "center" },
   appTitle: { textAlign: "center" },
   subtitle: { textAlign: "center", marginTop: 6 },
-  card: { borderRadius: 16 },
+  card: { borderRadius: 16 , paddingVertical:10},
   sectionHeaderRow: {
     flexDirection: "row",
     justifyContent: "space-between",

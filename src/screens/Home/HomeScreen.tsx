@@ -18,7 +18,7 @@ import {
   Chip,
   IconButton,
   Text,
-  useTheme
+  useTheme,
 } from "react-native-paper";
 import { SafeAreaView } from "react-native-safe-area-context";
 import {
@@ -182,11 +182,11 @@ const HomeScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
                 ]}
                 onPress={() => navigation.navigate("JournalList")}
               >
-                <Text variant="labelMedium" style={styles.statLabel}>
-                  Total entries
-                </Text>
                 <Text variant="displaySmall" style={styles.statValue}>
                   {journals.length}
+                </Text>
+                <Text variant="labelMedium" style={[styles.statLabel, {paddingTop:10}]}>
+                  Total entries
                 </Text>
               </Pressable>
 
@@ -196,24 +196,24 @@ const HomeScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
                   { backgroundColor: heroBg, borderColor: subtleBorder },
                 ]}
               >
+                <Animated.View style={{ transform: [{ scale: scaleAnim }] }}>
+                  <Text variant="displaySmall" style={styles.statValue}>
+                    {currentStreak}
+                  </Text>
+                </Animated.View>
                 <Text variant="labelMedium" style={styles.statLabel}>
                   <View
                     style={{
                       flexDirection: "row",
                       alignItems: "center",
                       justifyContent: "center",
-                      gap: 6,
+                      gap:1,
                     }}
                   >
-                    <IconButton icon="fire" size={18} style={{ margin: 0 }} />
-                    <Text variant="bodyMedium">Current Streak</Text>
+                    <IconButton icon="fire" size={25} style={{ margin: 0, marginBottom:5 }} />
+                    <Text variant="labelSmall">Current Streak</Text>
                   </View>
                 </Text>
-                <Animated.View style={{ transform: [{ scale: scaleAnim }] }}>
-                  <Text variant="displaySmall" style={styles.statValue}>
-                    {currentStreak}
-                  </Text>
-                </Animated.View>
               </View>
             </View>
 
@@ -228,7 +228,7 @@ const HomeScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
               >
                 {`Longest streak: ${longestStreak}`}
               </Chip>
-{/* 
+              {/* 
               <Chip
                 icon="calendar-check-outline"
                 compact
@@ -405,29 +405,29 @@ const styles = StyleSheet.create({
     gap: 12,
     marginTop: 16,
   },
-statTile: {
-  flex: 1,
-  borderRadius: 14,
-  borderWidth: 1,
-  paddingVertical: 14,
-  paddingHorizontal: 14,
-  alignItems: "center",      // add
-  justifyContent: "center",  // add
-},
-statLabel: {
-  opacity: 0.75,
-  marginBottom: 6,
-  textAlign: "center",       // add
-},
-statValue: {
-  fontWeight: "800",
-  letterSpacing: -0.5,
-  textAlign: "center",       // add
-},
+  statTile: {
+    flex: 1,
+    borderRadius: 14,
+    borderWidth: 1,
+    paddingTop: 28,
+    paddingHorizontal: 14,
+    alignItems: "center", // add
+    justifyContent: "center", // add
+  },
+  statLabel: {
+    opacity: 0.75,
+    marginBottom: 6,
+    textAlign: "center", // add
+  },
+  statValue: {
+    fontSize:35,
+    fontWeight: "800",
+    textAlign: "center", // add
+  },
 
   heroChipsRow: {
-    display:"flex",
-    justifyContent:'center',
+    display: "flex",
+    justifyContent: "center",
     flexDirection: "row",
     flexWrap: "wrap",
     gap: 10,
@@ -482,22 +482,21 @@ statValue: {
     borderTopWidth: StyleSheet.hairlineWidth,
   },
   statsRow: {
-  flexDirection: "row",
-  justifyContent: "space-around",
-  alignItems: "stretch", // add
-},
-statItem: {
-  flex: 1,
-  alignItems: "center",
-  justifyContent: "center", // add
-  minHeight: 90,           // add (adjust 80-110)
-},
-statNumber: {
-  fontWeight: "bold",
-  marginBottom: 6,         // little spacing
-  textAlign: "center",
-},
-
+    flexDirection: "row",
+    justifyContent: "space-around",
+    alignItems: "stretch", // add
+  },
+  statItem: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center", // add
+    minHeight: 90, // add (adjust 80-110)
+  },
+  statNumber: {
+    fontWeight: "bold",
+    marginBottom: 6, // little spacing
+    textAlign: "center",
+  },
 });
 
 export default HomeScreen;

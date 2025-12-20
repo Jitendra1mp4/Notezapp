@@ -248,7 +248,8 @@ const styles = StyleSheet.create({
     alignSelf: "center",
   },
   cardContent: {
-    paddingVertical: 12,
+    paddingVertical: 40,
+    paddingHorizontal: 20,
   },
   loadingBox: {
     marginBottom: 12,

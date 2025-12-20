@@ -325,7 +325,7 @@ const SettingsScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
           {/* Change password + destroy DB row */}
           <View
             style={{
-              flexDirection: "row",
+              flexDirection: "column",
               justifyContent: "space-around",
               gap: 12,
               marginTop: 20,
@@ -369,7 +369,7 @@ const SettingsScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
 
         {/* About */}
         <View
-          style={[styles.section, { backgroundColor: theme.colors.surface }]}
+          style={[styles.section, { paddingVertical: 300,backgroundColor: theme.colors.surface }]}
         >
           <Text variant="titleLarge" style={styles.sectionTitle}>
             About
@@ -452,7 +452,8 @@ const styles = StyleSheet.create({
   section: {
     marginBottom: 24,
     borderRadius: 16,
-    padding: 16,
+    padding: 26,
+    paddingVertical:30,
     // backgroundColor injected from theme in JSX
     elevation: 2,
   },
@@ -500,6 +501,7 @@ const styles = StyleSheet.create({
   },
   aboutCard: {
     padding: 20,
+    paddingVertical: 20,
     borderRadius: 12,
     alignItems: "center",
   },
