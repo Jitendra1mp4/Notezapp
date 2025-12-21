@@ -59,12 +59,16 @@ export const initDatabase = async () => {
         
         export const DestroyAndReInitializeDatabase = async () => {
           try {    
-             await db?.closeAsync();
-             await SQLite.deleteDatabaseAsync(DB_NAME) ;
-
-             // Initialize a new database;
-             await initDatabase();         
-            console.log('Database Destroyed successfully');
+             if (db != null) {
+              await db.closeAsync()
+              await SQLite.deleteDatabaseAsync(DB_NAME) ;
+              console.log('Database Destroyed successfully');
+              // Initialize a new database;
+              await initDatabase();         
+              console.log('Database Reinitialized successfully');
+            }else{
+              throw Error("unable to destroy db as db is null",)
+            }
           } catch (error) {
             console.error('Error Destroying database:', error);
             throw error;

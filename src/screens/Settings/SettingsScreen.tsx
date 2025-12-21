@@ -8,18 +8,10 @@ import {
 import { getCryptoProvider } from "@/src/services/unifiedCryptoManager";
 import {
   getVault,
-  ResetStorage,
-  saveVault,
+  saveVault
 } from "@/src/services/unifiedStorageService";
 import React, { useEffect, useState } from "react";
-import {
-  Alert,
-  Platform,
-  ScrollView,
-  StyleSheet,
-  Switch,
-  View,
-} from "react-native";
+import { Platform, ScrollView, StyleSheet, Switch, View } from "react-native";
 import {
   Button,
   Dialog,
@@ -31,6 +23,8 @@ import {
   useTheme,
 } from "react-native-paper";
 
+import { Alert } from "@/src/utils/alert";
+import { handleDestroy } from "@/src/utils/destroyDbAlert";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { APP_CONFIG } from "../../config/appConfig";
 import { useAppDispatch, useAppSelector } from "../../stores/hooks";
@@ -41,7 +35,7 @@ import {
   setNotificationTime,
   setTheme,
 } from "../../stores/slices/settingsSlice";
-const CryptoManager = getCryptoProvider() ;
+const CryptoManager = getCryptoProvider();
 
 const SettingsScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
   const theme = useTheme();
@@ -343,22 +337,7 @@ const SettingsScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
             <Button
               mode="outlined"
               style={styles.resetButton}
-              onPress={async () => {
-                Alert.alert(
-                  "Destroy Database!",
-                  "Are you sure you want to destroy DB? Everything will be reset.",
-                  [
-                    { text: "Cancel", onPress: () => {} },
-                    {
-                      text: "Yes",
-                      onPress: () => {
-                        ResetStorage();
-                        navigation.navigate("Signup");
-                      },
-                    },
-                  ],
-                );
-              }}
+              onPress={async () => await handleDestroy()}
               textColor={theme.colors.error}
               icon="hammer"
             >
@@ -369,7 +348,10 @@ const SettingsScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
 
         {/* About */}
         <View
-          style={[styles.section, { paddingVertical: 300,backgroundColor: theme.colors.surface }]}
+          style={[
+            styles.section,
+            { paddingVertical: 300, backgroundColor: theme.colors.surface },
+          ]}
         >
           <Text variant="titleLarge" style={styles.sectionTitle}>
             About
