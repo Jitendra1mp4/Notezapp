@@ -1,4 +1,6 @@
 import APP_CONFIG from "@/src/config/appConfig";
+import { getCryptoProvider } from "@/src/services/unifiedCryptoManager";
+import { resolveImmediately } from "@/src/utils/immediatePromiseResolver";
 import { useFocusEffect } from "@react-navigation/native";
 import React, { useCallback, useState } from "react";
 import { KeyboardAvoidingView, Platform, StyleSheet, View } from "react-native";
@@ -11,7 +13,6 @@ import {
   useTheme
 } from "react-native-paper";
 import { SafeAreaView } from "react-native-safe-area-context";
-import CryptoManager from "../../services/cryptoManager";
 import { getVault, isFirstLaunch } from "../../services/unifiedStorageService";
 import { useAppDispatch } from "../../stores/hooks";
 import {
@@ -20,10 +21,11 @@ import {
 } from "../../stores/slices/authSlice";
 import { Alert } from "../../utils/alert";
 
+const CryptoManager = getCryptoProvider() ;
+
 const LoginScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
   const theme = useTheme();
   const dispatch = useAppDispatch();
-  // const { setEncryptionKey } = useAuth();
 
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -77,15 +79,15 @@ const LoginScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
 
     if (!vaultReady) {
       Alert.alert(
-        "Error",
+        "Oops!",
         "Secure storage not ready. Please wait and try again.",
       );
       return;
     }
 
     setIsLoading(true);
-    // resolves ui update for loading state not visible
-     await new Promise(resolve => setImmediate(resolve));
+     // Yield control to let React paint the loading state FIRST
+    await new Promise(resolve => resolveImmediately(resolve));
     try {
       console.log("🔓 Unlocking...");
 
@@ -147,26 +149,7 @@ const LoginScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
           <Card
             style={[styles.card, { backgroundColor: theme.colors.surface }]}
           >
-            <Card.Content style={styles.cardContent}>
-              {/* {!vaultReady && isLoading && (
-                <View style={styles.loadingBox}>
-                  <ProgressBar indeterminate />
-                  <Text
-                    variant="bodySmall"
-                    style={[
-                      styles.loadingText,
-                      { color: theme.colors.onSurfaceVariant },
-                    ]}
-                  >
-                    Loading secure storage...
-                  </Text>
-                </View>
-              )} */}
-
-              {/* {isLoading && (
-                <ProgressBar indeterminate style={styles.inlineProgress} />
-              )} */}
-
+            <Card.Content style={styles.cardContent}>             
               <TextInput
                 label="Password"
                 value={password}
@@ -266,7 +249,8 @@ const styles = StyleSheet.create({
     alignSelf: "center",
   },
   cardContent: {
-    paddingVertical: 12,
+    paddingVertical: 40,
+    paddingHorizontal: 20,
   },
   loadingBox: {
     marginBottom: 12,

@@ -17,7 +17,8 @@ const APP_NAME_NORMALIZED_UNDERSCORE = APP_NAME.replace(/\s+/g, '_').toLowerCase
 const APP_NAME_SLUG = APP_NAME.replace(/\s+/g, '-'); // e.g., "D-Journal-HUB"
 const APP_NAME_PACKAGE = 'djournalhub'; // lowercase, no separators for package name
 
-const KDF_ITERATIONS = 30000; // NIST recommended: 100,000+
+const IS_DEVELOPMENT:boolean = false ;
+const KDF_ITERATIONS =  IS_DEVELOPMENT? 10 : 100999 ;// NIST recommended: 100,000+
 const SALT_SIZE = 32; // 256 bits
 const DK_SIZE = 32; // 256 bits for AES-256
 const IV_SIZE = 12; // 96 bits for GCM
@@ -31,6 +32,9 @@ const LOCK_TIMEOUT_OPTIONS = [
 ];
 
 export const APP_CONFIG = {
+
+  IS_DEVELOPMENT,
+
   // Display name
   displayName:  "🔏 Journal HUB", // APP_NAME,
 
@@ -39,18 +43,18 @@ export const APP_CONFIG = {
   packageName: `pro.corelogik.${APP_NAME_PACKAGE}`, // Android package name
   scheme: APP_NAME_PACKAGE, // Deep linking scheme
 
-  // Database configuration
-  dbName: `${APP_NAME_NORMALIZED_UNDERSCORE}.db`, // e.g., "d_journal_hub.db"
+  // we want to make db name independent of app name
+  dbName: `pro.corelogik.journal_app.db`, 
 
   // Storage key prefix - used for AsyncStorage and other storage mechanisms
   storageKeyPrefix: `@${APP_NAME_NORMALIZED_UNDERSCORE}`, // e.g., "@d_journal_hub"
 
-  KDF_ITERATIONS: KDF_ITERATIONS ,
-  SALT_SIZE: SALT_SIZE ,
-  DK_SIZE: DK_SIZE ,
-  IV_SIZE: IV_SIZE ,
+  KDF_ITERATIONS ,
+  SALT_SIZE ,
+  DK_SIZE ,
+  IV_SIZE ,
 
-  LOCK_TIMEOUT_OPTIONS : LOCK_TIMEOUT_OPTIONS, 
+  LOCK_TIMEOUT_OPTIONS, 
 
   // Storage keys - all derived from the prefix
   storageKeys: {

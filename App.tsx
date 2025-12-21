@@ -1,8 +1,13 @@
 // App.tsx
 import { StatusBar } from 'expo-status-bar';
 import React, { useEffect, useRef, useState } from 'react';
-import { AppState, AppStateStatus, View } from 'react-native';
+import { AppState, AppStateStatus, Platform, View } from 'react-native';
 import 'react-native-get-random-values';
+import { install } from 'react-native-quick-crypto';
+if (Platform.OS !== 'web'){
+  install() ;
+}
+
 import { Text } from 'react-native-paper';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { Provider as ReduxProvider } from 'react-redux';

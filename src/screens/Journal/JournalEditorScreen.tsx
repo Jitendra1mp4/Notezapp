@@ -28,8 +28,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { v4 as uuidv4 } from "uuid";
 import {
   base64ToDataUri,
-  compressImage,
-  imageUriToBase64,
+  imageUriToBase64
 } from "../../services/imageService";
 import { getJournal, saveJournal } from "../../services/unifiedStorageService";
 import { useAppDispatch, useAppSelector } from "../../stores/hooks";
@@ -64,7 +63,7 @@ const JournalEditorScreen: React.FC<{ navigation: any; route: any }> = ({
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
 
   // New state for Markdown Preview toggle
-  const [isPreviewMode, setIsPreviewMode] = useState(false);
+  const [isPreviewMode, setIsPreviewMode] = useState(true);
   const [imageRatios, setImageRatios] = useState<Record<string, number>>({});
 
   // Request camera permissions on mount
@@ -97,8 +96,10 @@ const JournalEditorScreen: React.FC<{ navigation: any; route: any }> = ({
         const selectedUri = result.assets[0].uri;
 
         // Compress and convert to base64 for optimal storage
-        const compressedUri = await compressImage(selectedUri, 1200, 1200, 0.8);
-        const base64 = await imageUriToBase64(compressedUri);
+        // const compressedUri = await compressImage(selectedUri, 1200, 1200, 0.8);
+        // const base64 = await imageUriToBase64(compressedUri);
+
+        const base64 = await imageUriToBase64(selectedUri);
 
         setImageBase64List([...imageBase64List, base64]);
         setImageIds([...imageIds, uuidv4()]);
@@ -372,6 +373,7 @@ const JournalEditorScreen: React.FC<{ navigation: any; route: any }> = ({
           {/* Editor / Preview Area */}
           {isPreviewMode ? (
             <View style={styles.previewContainer}>
+              <Pressable onPress={()=>setIsPreviewMode(!isPreviewMode)}>
               <Markdown style={markdownStyles}>
                 {text.trim()
                   ? text
@@ -379,10 +381,14 @@ const JournalEditorScreen: React.FC<{ navigation: any; route: any }> = ({
                     "Start writing in **Edit** mode using these formats:\n\n" +
                     "• `Start with # for Big Header`\n" +
                     "• `Start with ## for Medium Header`\n" +
-                    "• `Start with - for unordered List item`" +
+                    "• `Start with - for unordered List item`\n" +
                     "• `Surround like **Bold Text** for bold text`\n" +
-                    "• `Surround like *Italic Text* for italic`\n"}
+                    "• `Surround like *Italic Text* for italic`\n"+
+                    "\nTap on eye icon to toggle between preview and edit mode\n"
+                    }
               </Markdown>
+
+              </Pressable>
             </View>
           ) : (
             <TextInput

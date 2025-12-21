@@ -18,10 +18,10 @@ export interface SettingsState {
 // src/stores/slices/settingsSlice.ts
 const initialState: SettingsState = {
   theme: 'auto',
-  notificationsEnabled: false,
+  notificationsEnabled: true,
   notificationTime: '20:00',
   autoLockTimeout: APP_CONFIG.LOCK_TIMEOUT_OPTIONS[0].value, // 1 minutes
-  instantLockOnBackground: false,
+  instantLockOnBackground: true,
   isExportInProgress: false,
   isImagePickingInProgress: false,
 };

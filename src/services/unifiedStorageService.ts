@@ -11,9 +11,9 @@
 import { Platform } from 'react-native';
 import { AppSettings, Journal } from '../types';
 import type { Vault } from '../types/crypto';
-import * as AsyncStorageBackend from './asyncStoreStorageService';
+import * as AsyncStorageBackend from './impl/asyncStoreStorageService';
+import * as SQLiteBackend from './impl/sqliteDatabaseStorageService';
 import preferencesStorage from './preferencesStorage';
-import * as SQLiteBackend from './sqliteDatabaseStorageService';
 
 // Detect if we're on web or native
 const IS_WEB = Platform.OS === 'web';

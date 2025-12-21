@@ -93,7 +93,7 @@ async function openPreferencesDatabase(): Promise<SQLite.SQLiteDatabase> {
   }
 }
 
-const nativePreferencesStorage = {
+const SQlPreferencesStorage = {
   async clearSettings(): Promise<void> {
     try {
       const db = await openPreferencesDatabase();
@@ -204,17 +204,17 @@ export const preferencesStorage = {
   saveSettings: (settings: AppSettings) =>
     isWeb
       ? webPreferencesStorage.saveSettings(settings)
-      : nativePreferencesStorage.saveSettings(settings),
+      : SQlPreferencesStorage.saveSettings(settings),
 
   getSettings: () =>
     isWeb
       ? webPreferencesStorage.getSettings()
-      : nativePreferencesStorage.getSettings(),
+      : SQlPreferencesStorage.getSettings(),
 
   clearSettings: () =>
     isWeb
       ? webPreferencesStorage.clearSettings()
-      : nativePreferencesStorage.clearSettings(),
+      : SQlPreferencesStorage.clearSettings(),
 };
 
 export default preferencesStorage;

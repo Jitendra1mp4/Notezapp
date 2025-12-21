@@ -1,8 +1,9 @@
+import APP_CONFIG from '@/src/config/appConfig';
+import { Journal, SecurityQuestion } from '@/src/types';
+import { Vault } from '@/src/types/crypto';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import APP_CONFIG from '../config/appConfig';
-import { Journal, SecurityQuestion } from '../types';
-import type { Vault } from '../types/crypto';
-import { decryptJSON, encryptJSON } from './encryptionService';
+import { decryptJSON, encryptJSON } from '../encryptionService';
+
 
 // Storage keys - all derived from centralized APP_CONFIG
 export const KEYS = APP_CONFIG.storageKeys;

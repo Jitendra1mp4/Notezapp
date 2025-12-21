@@ -31,7 +31,7 @@ export const parseExportedJournals = (jsonText: string): Journal[] => {
         title: typeof j.title === 'string' ? j.title : undefined,
         text: String(j.text ?? ''),
         mood: typeof j.mood === 'string' ? j.mood : undefined,
-        images: Array.isArray(j.images) ? j.images.filter((x) => typeof x === 'string') : undefined,
+        images: Array.isArray(j.images) ? j.images.filter((x:unknown) => typeof x === 'string') : undefined,
       }),
     );
 
