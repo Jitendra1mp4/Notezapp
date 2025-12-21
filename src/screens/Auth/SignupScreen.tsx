@@ -35,6 +35,7 @@ import APP_CONFIG from "@/src/config/appConfig";
 import { requestNotificationPermissions } from "@/src/services/notificationService";
 import { getCryptoProvider } from "@/src/services/unifiedCryptoManager";
 import { resolveImmediately } from "@/src/utils/immediatePromiseResolver";
+import { useFocusEffect } from "@react-navigation/native";
 import { QAPair } from "../../types/crypto";
 import { PREDEFINED_SECURITY_QUESTIONS } from "../../utils/securityQuestions";
 const CryptoManager = getCryptoProvider();
@@ -52,35 +53,40 @@ const SignupScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
-  // Fix useEffect: proper async handling + runs once only
   useEffect(() => {
-    let isMounted = true;
-
-    (async () => {
-      try {
-        const isFirst = await isFirstLaunch();
-        console.log(`isFirstLaunch: ${isFirst}`);
-        if (!isFirst && isMounted) {
-          navigation.navigate("Login");
-        }
-
-        // Request Notification Permissions
-        const granted = await requestNotificationPermissions();
-        if (!granted) {
-          Alert.alert(
-            "Permission Required",
-            "Please enable notifications in your device settings",
-          );
-        }
-      } catch (err) {
-        console.error("Error checking first launch:", err);
+    const askPermission = async () => {
+      // Request Notification Permissions
+      const granted = await requestNotificationPermissions();
+      if (!granted ) {
+        Alert.alert(
+          "Permission Required",
+          "Please enable notifications in your device settings.",
+        );
       }
-    })();
-
-    return () => {
-      isMounted = false;
     };
-  }, [navigation]);
+    if (Platform.OS !== 'web') askPermission();
+  },[]);
+
+  useFocusEffect(
+    useCallback(() => {
+      let isMounted = true;
+      (async () => {
+        try {
+          const isFirst = await isFirstLaunch();
+          console.log(`isFirstLaunch: ${isFirst}`);
+          if (!isFirst && isMounted) {
+            navigation.navigate("Login");
+          }
+        } catch (err) {
+          console.error("Error checking first launch:", err);
+        }
+      })();
+
+      return () => {
+        isMounted = false;
+      };
+    }, [navigation]),
+  );
 
   const passwordsMatch = password === confirmPassword && password.length > 0;
   const isPasswordValid = password.length >= 8;
@@ -440,7 +446,7 @@ const styles = StyleSheet.create({
   header: { marginTop: 8, marginBottom: 8, alignItems: "center" },
   appTitle: { textAlign: "center" },
   subtitle: { textAlign: "center", marginTop: 6 },
-  card: { borderRadius: 16 , paddingVertical:10},
+  card: { borderRadius: 16, paddingVertical: 10 },
   sectionHeaderRow: {
     flexDirection: "row",
     justifyContent: "space-between",
