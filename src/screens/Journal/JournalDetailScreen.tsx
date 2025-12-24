@@ -126,7 +126,7 @@ const JournalDetailScreen: React.FC<{ navigation: any; route: any }> = ({
             if (!encryptionKey) return;
             setIsDeleting(true);
             try {
-              await VaultStorageProvider.deleteJournal(journalId);
+              await VaultStorageProvider.deleteJournal(journalId,encryptionKey);
               dispatch(deleteJournalAction(journalId));
               navigation.goBack();
             } catch (error) {
