@@ -2,13 +2,17 @@ import APP_CONFIG from "@/src/config/appConfig";
 import { Journal, SecurityQuestion } from "@/src/types";
 import { Vault } from "@/src/types/crypto";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { decryptJSON, encryptJSON } from "../encryptionService";
 import { VaultStorageProvider } from "../unifiedStorageService";
+import CryptoJSCryptoManager from "./cryptoJSCryptoManager";
 
 class AsyncStoreStorageProvider implements VaultStorageProvider {
   static obj: AsyncStoreStorageProvider | null = null;
 
-  private constructor() {}
+   cryptoJsManger:CryptoJSCryptoManager ;
+
+  private constructor() {
+    this.cryptoJsManger=CryptoJSCryptoManager.getObject()
+  }
  
   // Singleton object
   static getObject(): AsyncStoreStorageProvider {
@@ -90,7 +94,7 @@ class AsyncStoreStorageProvider implements VaultStorageProvider {
     key: string,
   ): Promise<void> => {
     try {
-      const encrypted = encryptJSON(key, questions);
+      const encrypted = this.cryptoJsManger.encryptJSON(key, questions);
       await AsyncStorage.setItem(
         APP_CONFIG.STORAGE_KEYS.SECURITY_QUESTIONS,
         encrypted,
@@ -113,7 +117,7 @@ class AsyncStoreStorageProvider implements VaultStorageProvider {
       );
       if (!encrypted) return null;
 
-      return decryptJSON(key, encrypted) as SecurityQuestion[];
+      return this.cryptoJsManger.decryptJSON(key, encrypted) as SecurityQuestion[];
     } catch (error) {
       console.error("Error getting security questions:", error);
       return null;
@@ -209,7 +213,7 @@ class AsyncStoreStorageProvider implements VaultStorageProvider {
         journals.push(journal);
       }
 
-      const encrypted = encryptJSON(key, journals);
+      const encrypted = this.cryptoJsManger.encryptJSON(key, journals);
       await AsyncStorage.setItem(APP_CONFIG.STORAGE_KEYS.JOURNALS, encrypted);
     } catch (error) {
       console.error("Error saving journal:", error);
@@ -240,7 +244,7 @@ class AsyncStoreStorageProvider implements VaultStorageProvider {
       );
       if (!encrypted) return [];
 
-      return decryptJSON(key, encrypted) as Journal[];
+      return this.cryptoJsManger.decryptJSON(key, encrypted) as Journal[];
     } catch (error) {
       console.error("Error listing journals:", error);
       throw new Error("Failed to load journals - wrong password?");
@@ -250,6 +254,8 @@ class AsyncStoreStorageProvider implements VaultStorageProvider {
   /**
    * Delete a journal
    */
+
+  
   deleteJournal = async (id: string, key?: string): Promise<void> => {
     try {
       if (key === undefined || key === null) {
@@ -259,7 +265,7 @@ class AsyncStoreStorageProvider implements VaultStorageProvider {
       const journals = await this.listJournals(key);
       const filtered = journals.filter((j) => j.id !== id);
 
-      const encrypted = encryptJSON(key, filtered);
+      const encrypted = this.cryptoJsManger.encryptJSON(key, filtered);
       await AsyncStorage.setItem(APP_CONFIG.STORAGE_KEYS.JOURNALS, encrypted);
     } catch (error) {
       console.error("Error deleting journal:", error);
@@ -274,7 +280,7 @@ class AsyncStoreStorageProvider implements VaultStorageProvider {
     try {
       // Re-encrypt journals
       const journals = await this.listJournals(oldKey);
-      const encryptedJournals = encryptJSON(newKey, journals);
+      const encryptedJournals = this.cryptoJsManger.encryptJSON(newKey, journals);
       await AsyncStorage.setItem(
         APP_CONFIG.STORAGE_KEYS.JOURNALS,
         encryptedJournals,
@@ -283,7 +289,7 @@ class AsyncStoreStorageProvider implements VaultStorageProvider {
       // Re-encrypt security questions
       const securityQuestions = await this.getSecurityQuestions(oldKey);
       if (securityQuestions) {
-        const encryptedQuestions = encryptJSON(newKey, securityQuestions);
+        const encryptedQuestions = this.cryptoJsManger.encryptJSON(newKey, securityQuestions);
         await AsyncStorage.setItem(
           APP_CONFIG.STORAGE_KEYS.SECURITY_QUESTIONS,
           encryptedQuestions,
@@ -301,7 +307,7 @@ class AsyncStoreStorageProvider implements VaultStorageProvider {
         timestamp: new Date().toISOString(),
         verified: true,
       };
-      const encrypted = encryptJSON(key, verificationData);
+      const encrypted = this.cryptoJsManger.encryptJSON(key, verificationData);
       await AsyncStorage.setItem(
         APP_CONFIG.STORAGE_KEYS.VERIFICATION_TOKEN,
         encrypted,
@@ -325,7 +331,7 @@ class AsyncStoreStorageProvider implements VaultStorageProvider {
         return true; // Allow for backward compatibility
       }
 
-      const decrypted = decryptJSON(key, encrypted);
+      const decrypted = this.cryptoJsManger.decryptJSON(key, encrypted);
       return decrypted && decrypted.verified === true;
     } catch (error) {
       // Decryption failed = wrong password

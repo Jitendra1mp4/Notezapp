@@ -734,6 +734,42 @@ class CryptoJSCryptoManager implements UnifiedCryptoManager {
   getSecurityQuestions(vault: Vault): string[] {
     return vault.security_questions.map((sq) => sq.question);
   }
+
+
+
+// Encrypt a JSON object to ivHex + cipherHex
+encryptJSON = (keyHex: string, data: any): string => {
+  try {
+    const jsonString = JSON.stringify(data);
+    // return encryptText(keyHex, jsonString);
+    const ivHex = this.generateIV() ;
+    return this.encryptAES256(jsonString,keyHex,ivHex);
+  } catch (error) {
+    throw new Error(
+      `Failed to encrypt data: ${error instanceof Error ? error.message : String(error)}`
+    );
+  }
+};
+
+// Decrypt ivHex + cipherHex back to JSON
+/**
+ * Decrypt a ciphertext to plain text
+ * @param key - Encryption key
+ * @param cipherText - Encrypted text
+ * @returns Decrypted plain text
+ */
+decryptJSON =
+ (keyHex: string, cipherText: string): any => {
+  try {
+    const jsonString = this.decryptAES256(cipherText,keyHex);
+    return JSON.parse(jsonString);
+  } catch (error) {
+    throw new Error(
+      `Failed to decrypt data: ${error instanceof Error ? error.message : String(error)}`
+    );
+  }
+};
+  
 }
 
 export default CryptoJSCryptoManager;
