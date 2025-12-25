@@ -21,7 +21,7 @@ import {
 /**
  * Unified Crypto Manager Interface - All methods are async
  */
-export interface UnifiedCryptoManager {
+export interface CryptoServiceProvider {
   // ==================== Random Generation ====================
   
   /**
@@ -187,17 +187,17 @@ export interface UnifiedCryptoManager {
 /**
  * Get the appropriate crypto provider based on platform
  */
-export const getCryptoProvider = (): UnifiedCryptoManager => {
+export const getCryptoProvider = (): CryptoServiceProvider => {
   if (Platform.OS === 'web') {
     // Use Web Crypto API (SubtleCrypto) for web platform
-    const CryptoManagerWeb = require('./impl/cryptoManagerWeb').default;
+    const WebCryptoServiceProvider = require('./impl/webCryptoServiceProvider').default;
     console.log('[CryptoProvider] Using Web Crypto API (AES-GCM)');
-    return CryptoManagerWeb.getObject();
+    return WebCryptoServiceProvider.getObject();
   } else {
     // Use React Native Quick Crypto for iOS/Android
-    const QuickCryptoManagerGCM = require('./impl/quickCryptoManagerGCM').default;
+    const QuickCryptoCryptoServiceProvider = require('./impl/quickCryptoCryptoServiceProvider').default;
     console.log('[CryptoProvider] Using QuickCrypto (AES-GCM)');
-    return QuickCryptoManagerGCM.getObject();
+    return QuickCryptoCryptoServiceProvider.getObject();
   }
 };
 

@@ -1,4 +1,4 @@
-import { getCryptoProvider } from "@/src/services/unifiedCryptoManager";
+import { getCryptoProvider } from "@/src/services/cryptoServiceProvider";
 import { resolveImmediately } from "@/src/utils/immediatePromiseResolver";
 import React, { useEffect, useState } from "react";
 import { ScrollView, StyleSheet, View } from "react-native";
@@ -12,7 +12,7 @@ import {
 } from "react-native-paper";
 import { SafeAreaView } from "react-native-safe-area-context";
 
-import { getVaultStorageProvider } from "@/src/services/unifiedStorageService";
+import { getVaultStorageProvider } from "@/src/services/vaultStorageProvider";
 import { useAppDispatch } from "../../stores/hooks";
 import {
   setAuthenticated,

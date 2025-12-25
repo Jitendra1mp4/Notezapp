@@ -13,7 +13,8 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { Provider as ReduxProvider } from 'react-redux';
 import { ThemeProvider } from './src/components/common/ThemeProvider';
 import { RootNavigator } from './src/navigation/RootNavigator';
-import { getPreferenceStorageProvider, getVaultStorageProvider } from './src/services/unifiedStorageService';
+import { getPreferenceStorageProvider } from './src/services/preferenceStorageProvider';
+import { getVaultStorageProvider } from './src/services/vaultStorageProvider';
 import { store } from './src/stores';
 import {
   useAppDispatch,

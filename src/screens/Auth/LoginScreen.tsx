@@ -1,6 +1,6 @@
 import APP_CONFIG from "@/src/config/appConfig";
-import { getCryptoProvider } from "@/src/services/unifiedCryptoManager";
-import { getVaultStorageProvider } from "@/src/services/unifiedStorageService";
+import { getCryptoProvider } from "@/src/services/cryptoServiceProvider";
+import { getVaultStorageProvider } from "@/src/services/vaultStorageProvider";
 import { resolveImmediately } from "@/src/utils/immediatePromiseResolver";
 import { useFocusEffect } from "@react-navigation/native";
 import React, { useCallback, useState } from "react";

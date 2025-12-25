@@ -1,5 +1,5 @@
 // src/screens/Home/HomeScreen.tsx
-import { getVaultStorageProvider } from "@/src/services/unifiedStorageService";
+import { getVaultStorageProvider } from "@/src/services/vaultStorageProvider";
 import { Alert } from "@/src/utils/alert";
 import { getCalendarTheme } from "@/src/utils/theme";
 import { useFocusEffect } from "@react-navigation/native";

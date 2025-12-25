@@ -10,8 +10,8 @@ import * as SQLite from "expo-sqlite";
 import APP_CONFIG from "../../config/appConfig";
 import { Journal } from "../../types";
 import { EncryptedNote } from "../../types/crypto";
-import { getCryptoProvider, UnifiedCryptoManager } from "../unifiedCryptoManager";
-import { VaultStorageProvider } from "../unifiedStorageService";
+import { CryptoServiceProvider, getCryptoProvider } from "../cryptoServiceProvider";
+import { VaultStorageProvider } from "../vaultStorageProvider";
 
 class SQLiteStorageProvider implements VaultStorageProvider {
 
@@ -19,7 +19,7 @@ class SQLiteStorageProvider implements VaultStorageProvider {
 
   // --- Database Initialization ---
 
-   CryptoManager:UnifiedCryptoManager ;
+   CryptoManager:CryptoServiceProvider ;
 
 
   static obj: SQLiteStorageProvider | null = null;

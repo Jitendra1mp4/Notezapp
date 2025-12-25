@@ -3,19 +3,19 @@ import APP_CONFIG from '@/src/config/appConfig';
 import { Journal, SecurityQuestion } from '@/src/types';
 import { Vault } from '@/src/types/crypto';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { getCryptoProvider } from '../unifiedCryptoManager';
-import { VaultStorageProvider } from '../unifiedStorageService';
+import { getCryptoProvider } from '../cryptoServiceProvider';
+import { VaultStorageProvider } from '../vaultStorageProvider';
 
-class AsyncStoreStorageProvider implements VaultStorageProvider {
-  static obj: AsyncStoreStorageProvider | null = null;
+class AsyncStoreVaultStorageProvider implements VaultStorageProvider {
+  static obj: AsyncStoreVaultStorageProvider | null = null;
 
   private constructor() {}
 
-  static getObject(): AsyncStoreStorageProvider {
-    if (AsyncStoreStorageProvider.obj === null) {
-      AsyncStoreStorageProvider.obj = new AsyncStoreStorageProvider();
+  static getObject(): AsyncStoreVaultStorageProvider {
+    if (AsyncStoreVaultStorageProvider.obj === null) {
+      AsyncStoreVaultStorageProvider.obj = new AsyncStoreVaultStorageProvider();
     }
-    return AsyncStoreStorageProvider.obj;
+    return AsyncStoreVaultStorageProvider.obj;
   }
 
   // ==================== Helper Methods ====================
@@ -388,4 +388,4 @@ class AsyncStoreStorageProvider implements VaultStorageProvider {
   }
 }
 
-export default AsyncStoreStorageProvider;
+export default AsyncStoreVaultStorageProvider;

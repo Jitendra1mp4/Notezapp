@@ -9,12 +9,10 @@
  */
 
 import { Platform } from 'react-native';
-import { AppSettings, Journal } from '../types';
+import { Journal } from '../types';
 import type { Vault } from '../types/crypto';
-import AsyncStorePreferencesStorage from './impl/asyncStorePreferenceStorageService';
-import AsyncStoreStorageProvider from './impl/asyncStoreStorageService';
+import AsyncStoreVaultStorageProvider from './impl/asyncStoreVaultStorageProvider';
 import SQLiteStorageProvider from './impl/sqliteDatabaseStorageService';
-import SQLiteStorePreferencesStorage from './impl/sqlitePreferenceStorageService';
 
 // Detect if we're on web or native
 const IS_WEB = Platform.OS === 'web';
@@ -52,7 +50,7 @@ export interface VaultStorageProvider {
 export const getVaultStorageProvider = (): VaultStorageProvider => {
   if (IS_WEB) {
     console.log('[Storage] Using AsyncStorage backend for web');
-    return AsyncStoreStorageProvider.getObject();
+    return AsyncStoreVaultStorageProvider.getObject();
   } else {
     console.log('[Storage] Using SQLite backend for native');
     return SQLiteStorageProvider.getObject();
@@ -60,20 +58,3 @@ export const getVaultStorageProvider = (): VaultStorageProvider => {
 };
 
 
-
-export default interface PreferenceStorageProvider {
-  // initializeStorage: () => Promise<void>;
-  saveSettings : (settings: AppSettings) => Promise<void> 
-  getSettings : () => Promise<AppSettings | null>
-  clearSettings : () => Promise<void> 
-}
-
-export const getPreferenceStorageProvider  = ():PreferenceStorageProvider => {
-  if (IS_WEB) {
-    console.log('[Storage] Using AsyncStorage backend for web');
-    return AsyncStorePreferencesStorage.getObject();
-  } else {
-    console.log('[Storage] Using SQLite backend for native');
-    return SQLiteStorePreferencesStorage.getObject();
-  }
-} 

@@ -16,7 +16,7 @@ import { Card, FAB, IconButton, Searchbar, Text, useTheme } from "react-native-p
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import { exportAsJSON, exportAsMarkdown, exportAsPDF } from "@/src/services/exportService";
-import { getVaultStorageProvider } from "@/src/services/unifiedStorageService";
+import { getVaultStorageProvider } from "@/src/services/vaultStorageProvider";
 import { useAppDispatch, useAppSelector } from "@/src/stores/hooks";
 import {
   deleteJournal as deleteJournalAction,

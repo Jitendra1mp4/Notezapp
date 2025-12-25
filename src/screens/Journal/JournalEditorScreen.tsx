@@ -1,4 +1,4 @@
-import { getVaultStorageProvider } from "@/src/services/unifiedStorageService";
+import { getVaultStorageProvider } from "@/src/services/vaultStorageProvider";
 import { setIsImagePickingInProgress } from "@/src/stores/slices/settingsSlice";
 import { getMarkdownStyles } from "@/src/utils/markdownStyles";
 import { useFocusEffect } from "@react-navigation/native";

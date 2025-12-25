@@ -28,7 +28,7 @@ import {
   Vault,
   VaultSecurityQuestion,
 } from '../../types/crypto';
-import { UnifiedCryptoManager } from '../unifiedCryptoManager';
+import { CryptoServiceProvider } from '../cryptoServiceProvider';
 // polyfill imports
 import { Buffer } from '@craftzdog/react-native-buffer';
 
@@ -81,18 +81,18 @@ function hashSHA256(text: string): string {
 
 // ==================== Main Class ====================
 
-class QuickCryptoManagerGCM implements UnifiedCryptoManager {
-  private static obj: QuickCryptoManagerGCM | null = null;
+class QuickCryptoCryptoServiceProvider implements CryptoServiceProvider {
+  private static obj: QuickCryptoCryptoServiceProvider | null = null;
 
   private constructor() {
     // Private constructor for singleton
   }
 
-  static getObject(): QuickCryptoManagerGCM {
-    if (QuickCryptoManagerGCM.obj === null) {
-      QuickCryptoManagerGCM.obj = new QuickCryptoManagerGCM();
+  static getObject(): QuickCryptoCryptoServiceProvider {
+    if (QuickCryptoCryptoServiceProvider.obj === null) {
+      QuickCryptoCryptoServiceProvider.obj = new QuickCryptoCryptoServiceProvider();
     }
-    return QuickCryptoManagerGCM.obj;
+    return QuickCryptoCryptoServiceProvider.obj;
   }
 
   // ==================== Random Generation ====================
@@ -556,4 +556,4 @@ class QuickCryptoManagerGCM implements UnifiedCryptoManager {
   }
 }
 
-export default QuickCryptoManagerGCM;
+export default QuickCryptoCryptoServiceProvider;

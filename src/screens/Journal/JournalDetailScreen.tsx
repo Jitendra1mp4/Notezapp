@@ -27,7 +27,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 
 import { base64ToDataUri } from "@/src/services/imageService";
 
-import { getVaultStorageProvider } from "@/src/services/unifiedStorageService";
+import { getVaultStorageProvider } from "@/src/services/vaultStorageProvider";
 import { useAppDispatch, useAppSelector } from "@/src/stores/hooks";
 import { deleteJournal as deleteJournalAction } from "@/src/stores/slices/journalsSlice";
 import type { Journal } from "@/src/types";

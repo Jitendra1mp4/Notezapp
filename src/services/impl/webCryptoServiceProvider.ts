@@ -26,7 +26,7 @@ import {
   Vault,
   VaultSecurityQuestion,
 } from '../../types/crypto';
-import { UnifiedCryptoManager } from '../unifiedCryptoManager';
+import { CryptoServiceProvider } from '../cryptoServiceProvider';
 
 const subtle = window.crypto.subtle;
 const cryptoAPI = window.crypto;
@@ -120,8 +120,8 @@ async function hashSHA256(text: string): Promise<string> {
 
 // ==================== Main Class ====================
 
-class CryptoManagerWeb implements UnifiedCryptoManager {
-  private static obj: CryptoManagerWeb | null = null;
+class WebCryptoServiceProvider implements CryptoServiceProvider {
+  private static obj: WebCryptoServiceProvider | null = null;
 
   private constructor() {
     // Private constructor for singleton
@@ -130,11 +130,11 @@ class CryptoManagerWeb implements UnifiedCryptoManager {
     throw new Error('Method not implemented.');
   }
 
-  static getObject(): CryptoManagerWeb {
-    if (CryptoManagerWeb.obj === null) {
-      CryptoManagerWeb.obj = new CryptoManagerWeb();
+  static getObject(): WebCryptoServiceProvider {
+    if (WebCryptoServiceProvider.obj === null) {
+      WebCryptoServiceProvider.obj = new WebCryptoServiceProvider();
     }
-    return CryptoManagerWeb.obj;
+    return WebCryptoServiceProvider.obj;
   }
 
   // ==================== Random Generation ====================
@@ -621,4 +621,4 @@ class CryptoManagerWeb implements UnifiedCryptoManager {
   }
 }
 
-export default CryptoManagerWeb;
+export default WebCryptoServiceProvider;

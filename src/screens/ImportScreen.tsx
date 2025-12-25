@@ -6,7 +6,7 @@ import { Platform, StyleSheet, View } from 'react-native';
 import { Button, Card, HelperText, RadioButton, Text, useTheme } from 'react-native-paper';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { ImportMode, parseExportedJournals } from '../services/importService';
-import { getVaultStorageProvider } from '../services/unifiedStorageService';
+import { getVaultStorageProvider } from '../services/vaultStorageProvider';
 import { useAppDispatch, useAppSelector } from '../stores/hooks';
 import { setJournals } from '../stores/slices/journalsSlice';
 import { Alert } from '../utils/alert';

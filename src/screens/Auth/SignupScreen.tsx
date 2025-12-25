@@ -26,9 +26,9 @@ import {
 } from "../../stores/slices/authSlice";
 
 import APP_CONFIG from "@/src/config/appConfig";
+import { getCryptoProvider } from "@/src/services/cryptoServiceProvider";
 import { requestNotificationPermissions } from "@/src/services/notificationService";
-import { getCryptoProvider } from "@/src/services/unifiedCryptoManager";
-import { getVaultStorageProvider } from "@/src/services/unifiedStorageService";
+import { getVaultStorageProvider } from "@/src/services/vaultStorageProvider";
 import { resolveImmediately } from "@/src/utils/immediatePromiseResolver";
 import { useFocusEffect } from "@react-navigation/native";
 import { QAPair } from "../../types/crypto";

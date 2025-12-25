@@ -1,11 +1,11 @@
 import { TimePickerInput } from "@/src/components/common/TimePickerInput";
 
+import { getCryptoProvider } from "@/src/services/cryptoServiceProvider";
 import {
   cancelAllNotifications,
   requestNotificationPermissions,
   scheduleDailyReminder,
 } from "@/src/services/notificationService";
-import { getCryptoProvider } from "@/src/services/unifiedCryptoManager";
 
 import React, { useEffect, useState } from "react";
 import { Platform, ScrollView, StyleSheet, Switch, View } from "react-native";
@@ -20,7 +20,7 @@ import {
   useTheme,
 } from "react-native-paper";
 
-import { getVaultStorageProvider } from "@/src/services/unifiedStorageService";
+import { getVaultStorageProvider } from "@/src/services/vaultStorageProvider";
 import { Alert } from "@/src/utils/alert";
 import { handleDestroy } from "@/src/utils/destroyDbAlert";
 import { SafeAreaView } from "react-native-safe-area-context";

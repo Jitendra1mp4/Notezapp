@@ -4,22 +4,22 @@
 
 import APP_CONFIG from "@/src/config/appConfig";
 import { AppSettings } from "@/src/types";
-import PreferenceStorageProvider from "../unifiedStorageService";
+import PreferenceStorageProvider from "../preferenceStorageProvider";
 
 
-class AsyncStorePreferencesStorage  implements PreferenceStorageProvider{
+class AsyncStorePreferenceStorageProvider  implements PreferenceStorageProvider{
 
- static obj: AsyncStorePreferencesStorage | null = null;
+ static obj: AsyncStorePreferenceStorageProvider | null = null;
 
   private constructor() {
   }
 
   // Singleton object
-  static getObject(): AsyncStorePreferencesStorage {
-    if (AsyncStorePreferencesStorage.obj == null) {
-      AsyncStorePreferencesStorage.obj = new AsyncStorePreferencesStorage();
+  static getObject(): AsyncStorePreferenceStorageProvider {
+    if (AsyncStorePreferenceStorageProvider.obj == null) {
+      AsyncStorePreferenceStorageProvider.obj = new AsyncStorePreferenceStorageProvider();
     }
-    return AsyncStorePreferencesStorage.obj;
+    return AsyncStorePreferenceStorageProvider.obj;
   }
 
   async saveSettings(settings: AppSettings): Promise<void> {
@@ -59,4 +59,4 @@ class AsyncStorePreferencesStorage  implements PreferenceStorageProvider{
   }
 };
 
-export default AsyncStorePreferencesStorage;
+export default AsyncStorePreferenceStorageProvider;

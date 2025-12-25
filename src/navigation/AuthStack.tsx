@@ -3,7 +3,7 @@ import React, { useEffect, useState } from 'react';
 import ForgotPasswordScreen from '../screens/Auth/ForgotPasswordScreen';
 import LoginScreen from '../screens/Auth/LoginScreen';
 import SignupScreen from '../screens/Auth/SignupScreen';
-import { getVaultStorageProvider } from '../services/unifiedStorageService';
+import { getVaultStorageProvider } from '../services/vaultStorageProvider';
 
 const Stack = createNativeStackNavigator();
 const VaultStorageProvider = getVaultStorageProvider()

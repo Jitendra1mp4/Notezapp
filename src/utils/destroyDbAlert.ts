@@ -1,5 +1,5 @@
 import { Platform } from "react-native";
-import { getVaultStorageProvider } from "../services/unifiedStorageService";
+import { getVaultStorageProvider } from "../services/vaultStorageProvider";
 import { logout } from "../stores/slices/authSlice";
 import { Alert } from "./alert";
 

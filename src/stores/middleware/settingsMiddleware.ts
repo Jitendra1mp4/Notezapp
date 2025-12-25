@@ -1,5 +1,5 @@
 // src/stores/middleware/settingsMiddleware.ts
-import { getPreferenceStorageProvider } from '@/src/services/unifiedStorageService';
+import { getPreferenceStorageProvider } from '@/src/services/preferenceStorageProvider';
 import { Middleware, isAction } from '@reduxjs/toolkit';
 import type { AppSettings } from '../../types';
 

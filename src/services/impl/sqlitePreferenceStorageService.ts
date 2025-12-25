@@ -5,7 +5,7 @@
 import APP_CONFIG from "@/src/config/appConfig";
 import { AppSettings } from "@/src/types";
 import * as SQLite from "expo-sqlite";
-import PreferenceStorageProvider from "../unifiedStorageService";
+import PreferenceStorageProvider from "../preferenceStorageProvider";
 
 let preferencesDbInstance: SQLite.SQLiteDatabase | null = null;
 
