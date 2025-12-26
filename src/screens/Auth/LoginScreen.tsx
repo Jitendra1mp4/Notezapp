@@ -1,5 +1,6 @@
 import APP_CONFIG from "@/src/config/appConfig";
-import { getCryptoProvider } from "@/src/services/unifiedCryptoManager";
+import { getCryptoProvider } from "@/src/services/cryptoServiceProvider";
+import { getVaultStorageProvider } from "@/src/services/vaultStorageProvider";
 import { resolveImmediately } from "@/src/utils/immediatePromiseResolver";
 import { useFocusEffect } from "@react-navigation/native";
 import React, { useCallback, useState } from "react";
@@ -13,7 +14,6 @@ import {
   useTheme
 } from "react-native-paper";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { getVault, isFirstLaunch } from "../../services/unifiedStorageService";
 import { useAppDispatch } from "../../stores/hooks";
 import {
   setAuthenticated,
@@ -22,6 +22,7 @@ import {
 import { Alert } from "../../utils/alert";
 
 const CryptoManager = getCryptoProvider() ;
+const VaultStorageProvider = getVaultStorageProvider()
 
 const LoginScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
   const theme = useTheme();
@@ -43,8 +44,8 @@ const LoginScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
           // optional: show loading state while checking
           setVaultReady(false);
 
-          const firstTime = await isFirstLaunch();
-          const vaultData = await getVault();
+          const firstTime = await  VaultStorageProvider.isFirstLaunch();
+          const vaultData = await  VaultStorageProvider.getVault();
 
           if (!isActive) return;
 
@@ -91,13 +92,13 @@ const LoginScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
     try {
       console.log("🔓 Unlocking...");
 
-      const vaultToUse = cachedVault ?? (await getVault());
+      const vaultToUse = cachedVault ?? (await  VaultStorageProvider.getVault());
       if (!vaultToUse) {
         Alert.alert("Oops!", "No account found. Please create an account.");
         return;
       }
 
-      const unlockResult: any = CryptoManager.unlockWithPassword(
+      const unlockResult: any = await CryptoManager.unlockWithPassword(
         vaultToUse as any,
         password,
       );

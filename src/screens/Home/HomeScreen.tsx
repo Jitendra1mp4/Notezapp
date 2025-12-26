@@ -1,4 +1,5 @@
 // src/screens/Home/HomeScreen.tsx
+import { getVaultStorageProvider } from "@/src/services/vaultStorageProvider";
 import { Alert } from "@/src/utils/alert";
 import { getCalendarTheme } from "@/src/utils/theme";
 import { useFocusEffect } from "@react-navigation/native";
@@ -25,12 +26,14 @@ import {
   calculateLongestStreak,
   getMarkedDates,
 } from "../../services/streakService";
-import { listJournals } from "../../services/unifiedStorageService";
 import { useAppDispatch, useAppSelector } from "../../stores/hooks";
 import {
   setJournals,
   setLongestStreak,
 } from "../../stores/slices/journalsSlice";
+
+const VaultStorageProvider = getVaultStorageProvider()
+
 
 const HomeScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
   const theme = useTheme();
@@ -72,7 +75,7 @@ const HomeScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
     if (!encryptionKey) return;
 
     try {
-      const loadedJournals = await listJournals(encryptionKey);
+      const loadedJournals = await  VaultStorageProvider.listJournals(encryptionKey);
       dispatch(setJournals(loadedJournals));
 
       const longest = calculateLongestStreak(loadedJournals);

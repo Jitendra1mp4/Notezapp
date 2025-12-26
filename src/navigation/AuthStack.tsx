@@ -3,9 +3,10 @@ import React, { useEffect, useState } from 'react';
 import ForgotPasswordScreen from '../screens/Auth/ForgotPasswordScreen';
 import LoginScreen from '../screens/Auth/LoginScreen';
 import SignupScreen from '../screens/Auth/SignupScreen';
-import { isFirstLaunch } from '../services/unifiedStorageService';
+import { getVaultStorageProvider } from '../services/vaultStorageProvider';
 
 const Stack = createNativeStackNavigator();
+const VaultStorageProvider = getVaultStorageProvider()
 
 export const AuthStack: React.FC = () => {
 
@@ -15,7 +16,7 @@ export const AuthStack: React.FC = () => {
     const initializeLoginState = async () => {
       try {
         // Check first launch
-        setIsFirstTime( await isFirstLaunch());
+        setIsFirstTime( await VaultStorageProvider.isFirstLaunch());
 
       } catch (error) {
         console.error("❌ init failed:", error);        

@@ -6,10 +6,12 @@ import { Platform, StyleSheet, View } from 'react-native';
 import { Button, Card, HelperText, RadioButton, Text, useTheme } from 'react-native-paper';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { ImportMode, parseExportedJournals } from '../services/importService';
-import { listJournals, saveJournal } from '../services/unifiedStorageService';
+import { getVaultStorageProvider } from '../services/vaultStorageProvider';
 import { useAppDispatch, useAppSelector } from '../stores/hooks';
 import { setJournals } from '../stores/slices/journalsSlice';
 import { Alert } from '../utils/alert';
+
+const VaultStorageProvider = getVaultStorageProvider()
 
 
 const ImportScreen: React.FC = () => {
@@ -67,7 +69,7 @@ const ImportScreen: React.FC = () => {
 
       const imported = parseExportedJournals(jsonText);
 
-      const existing = await listJournals(encryptionKey);
+      const existing = await VaultStorageProvider.listJournals(encryptionKey);
       const existingIds = new Set(existing.map((j) => j.id));
 
       let importedCount = 0;
@@ -81,11 +83,11 @@ const ImportScreen: React.FC = () => {
           continue;
         }
 
-        await saveJournal(j, encryptionKey);
+        await VaultStorageProvider.saveJournal(j, encryptionKey);
         importedCount++;
       }
 
-      const refreshed = await listJournals(encryptionKey);
+      const refreshed = await VaultStorageProvider.listJournals(encryptionKey);
       dispatch(setJournals(refreshed));
 
       setLastInfo(`Imported: ${importedCount}, Skipped: ${skipped}`);

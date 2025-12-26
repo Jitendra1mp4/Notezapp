@@ -18,13 +18,7 @@ import {
 import { Alert } from "../../utils/alert";
 
 import { SafeAreaView } from "react-native-safe-area-context";
-import {
-  clearRecoveryKeyDisplay,
-  isFirstLaunch,
-  markAsLaunched,
-  saveRecoveryKeyHash,
-  saveVault,
-} from "../../services/unifiedStorageService";
+
 import { useAppDispatch } from "../../stores/hooks";
 import {
   setAuthenticated,
@@ -32,13 +26,16 @@ import {
 } from "../../stores/slices/authSlice";
 
 import APP_CONFIG from "@/src/config/appConfig";
+import { getCryptoProvider } from "@/src/services/cryptoServiceProvider";
 import { requestNotificationPermissions } from "@/src/services/notificationService";
-import { getCryptoProvider } from "@/src/services/unifiedCryptoManager";
+import { getVaultStorageProvider } from "@/src/services/vaultStorageProvider";
 import { resolveImmediately } from "@/src/utils/immediatePromiseResolver";
 import { useFocusEffect } from "@react-navigation/native";
 import { QAPair } from "../../types/crypto";
 import { PREDEFINED_SECURITY_QUESTIONS } from "../../utils/securityQuestions";
+
 const CryptoManager = getCryptoProvider();
+const VaultStorageProvider = getVaultStorageProvider()
 
 const SignupScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
   const theme = useTheme();
@@ -72,7 +69,7 @@ const SignupScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
       let isMounted = true;
       (async () => {
         try {
-          const isFirst = await isFirstLaunch();
+          const isFirst = await VaultStorageProvider.isFirstLaunch();
           console.log(`isFirstLaunch: ${isFirst}`);
           if (!isFirst && isMounted) {
             navigation.navigate("Login");
@@ -141,26 +138,26 @@ const SignupScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
       // - Master Data Key (DK)
       // - Three key wraps (password, security answers, recovery key)
       // - Three salts for key derivation
-      const { vault, recoveryKey, dk } = CryptoManager.initializeVault(
+      const { vault, recoveryKey, dk } = await CryptoManager.initializeVault(
         password,
         qaPairs,
       );
 
-      await saveVault(vault);
+      await  VaultStorageProvider.saveVault(vault);
 
       // 4. Save recovery key hash (for verification purposes)
       // Note: Full recovery key is shown once to user
-      await saveRecoveryKeyHash(recoveryKey);
+      await  VaultStorageProvider.saveRecoveryKeyHash(recoveryKey);
 
       // 5. Mark app as launched
-      await markAsLaunched();
+      await  VaultStorageProvider.markAsLaunched();
 
       // 6. Update Redux state
       dispatch(setAuthenticated(true));
 
       // 7. Store the DK in context (user is now logged in with this key)
       // Decrypt DK using password for immediate access
-      // const { dk } = CryptoManager.unlockWithPassword(vault, password);
+      // const { dk } = await CryptoManager.unlockWithPassword(vault, password);
       dispatch(setEncryptionKey(dk));
 
       // 8. Show recovery key to user and ask them to save it
@@ -175,7 +172,7 @@ const SignupScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
           {
             text: "I have saved my Recovery Key",
             onPress: () => {
-              clearRecoveryKeyDisplay().catch((err: any) =>
+               VaultStorageProvider.clearRecoveryKeyDisplay().catch((err: any) =>
                 console.error("Error clearing recovery key:", err),
               );
               Alert.alert(

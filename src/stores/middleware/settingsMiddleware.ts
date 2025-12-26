@@ -1,7 +1,10 @@
 // src/stores/middleware/settingsMiddleware.ts
-import { saveSettings } from '@/src/services/unifiedStorageService';
+import { getPreferenceStorageProvider } from '@/src/services/preferenceStorageProvider';
 import { Middleware, isAction } from '@reduxjs/toolkit';
 import type { AppSettings } from '../../types';
+
+
+const PreferenceStorageProvider = getPreferenceStorageProvider()
 
 // Create middleware without importing RootState
 export const settingsMiddleware: Middleware = (storeAPI) => (next) => (action) => {
@@ -11,7 +14,7 @@ export const settingsMiddleware: Middleware = (storeAPI) => (next) => (action) =
   if (isAction(action) && action.type.startsWith('settings/')) {
     const state = storeAPI.getState() as { settings: AppSettings };
     
-    saveSettings(state.settings).catch((error) => {
+    PreferenceStorageProvider.saveSettings(state.settings).catch((error) => {
       console.error('❌ Failed to save settings:', error);
     });
   }

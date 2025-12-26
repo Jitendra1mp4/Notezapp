@@ -1,79 +1,24 @@
-/**
- * Preferences Storage Service
- * Handles user preferences/settings separately from encrypted journal data
- *
- * Web: Uses localStorage (synchronous, fast)
- * Native: Uses preferences.db SQLite database
- *
- * NOTE: Preferences are stored UNENCRYPTED (theme, notifications, UI settings)
- */
-
-import * as SQLite from "expo-sqlite";
-import { Platform } from "react-native";
-import APP_CONFIG from "../config/appConfig";
-import { AppSettings } from "../types";
-
-// ============================================================================
-// WEB IMPLEMENTATION (localStorage)
-// ============================================================================
-
-const WEB_STORAGE_KEY = `${APP_CONFIG.storageKeyPrefix}_preferences`;
-
-const webPreferencesStorage = {
-  async saveSettings(settings: AppSettings): Promise<void> {
-    try {
-      localStorage.setItem(WEB_STORAGE_KEY, JSON.stringify(settings));
-      console.log("✅ [Web] Preferences saved to localStorage");
-    } catch (error) {
-      console.error("❌ [Web] Error saving preferences:", error);
-      throw new Error("Failed to save preferences");
-    }
-  },
-
-  async getSettings(): Promise<AppSettings | null> {
-    try {
-      const data = localStorage.getItem(WEB_STORAGE_KEY);
-      if (!data) {
-        console.log("ℹ️ [Web] No saved preferences found");
-        return null;
-      }
-      const settings = JSON.parse(data) as AppSettings;
-      console.log("✅ [Web] Preferences loaded from localStorage");
-      return settings;
-    } catch (error) {
-      console.error("❌ [Web] Error loading preferences:", error);
-      return null;
-    }
-  },
-
-  async clearSettings(): Promise<void> {
-    try {
-      localStorage.removeItem(WEB_STORAGE_KEY);
-      console.log("✅ [Web] Preferences cleared");
-    } catch (error) {
-      console.error("❌ [Web] Error clearing preferences:", error);
-      throw new Error("Failed to clear preferences");
-    }
-  },
-};
-
 // ============================================================================
 // NATIVE IMPLEMENTATION (SQLite - preferences.db)
 // ============================================================================
 
-const PREFERENCES_DB_NAME = "preferences.db";
+import APP_CONFIG from "@/src/config/appConfig";
+import { AppSettings } from "@/src/types";
+import * as SQLite from "expo-sqlite";
+import PreferenceStorageProvider from "../preferenceStorageProvider";
+
 let preferencesDbInstance: SQLite.SQLiteDatabase | null = null;
 
 /**
  * Open/create preferences database
  */
-async function openPreferencesDatabase(): Promise<SQLite.SQLiteDatabase> {
+async function initializeStorage(): Promise<SQLite.SQLiteDatabase> {
   if (preferencesDbInstance) {
     return preferencesDbInstance;
   }
 
   try {
-    const db = await SQLite.openDatabaseAsync(PREFERENCES_DB_NAME);
+    const db = await SQLite.openDatabaseAsync(APP_CONFIG.SQLITE_PREFERENCES_DB_NAME);
 
     // Create settings table
     await db.execAsync(`
@@ -93,10 +38,23 @@ async function openPreferencesDatabase(): Promise<SQLite.SQLiteDatabase> {
   }
 }
 
-const SQlPreferencesStorage = {
+export default class SQLiteStorePreferencesStorage implements PreferenceStorageProvider {
+ 
+  static obj: SQLiteStorePreferencesStorage | null = null;
+
+  private constructor() {}
+ 
+  // Singleton object
+  static getObject(): SQLiteStorePreferencesStorage {
+    if (SQLiteStorePreferencesStorage.obj == null) {
+      SQLiteStorePreferencesStorage.obj = new SQLiteStorePreferencesStorage();
+    }
+    return SQLiteStorePreferencesStorage.obj;
+  }
+
   async clearSettings(): Promise<void> {
     try {
-      const db = await openPreferencesDatabase();
+      const db = await initializeStorage();
 
       // NUCLEAR OPTION: Drop the entire table
       await db.execAsync("DROP TABLE IF EXISTS settings;");
@@ -118,7 +76,7 @@ const SQlPreferencesStorage = {
       console.error("❌ [Native] Error clearing preferences:", error);
       throw new Error("Failed to clear preferences");
     }
-  },
+  }
 
   /**
    * Complete database destruction (for testing/reset)
@@ -133,11 +91,11 @@ const SQlPreferencesStorage = {
       }
 
       // Delete the database file
-      await SQLite.deleteDatabaseAsync(PREFERENCES_DB_NAME);
+      await SQLite.deleteDatabaseAsync(APP_CONFIG.SQLITE_PREFERENCES_DB_NAME);
       console.log("💥 [Native] preferences.db DELETED");
 
       // Recreate fresh
-      await openPreferencesDatabase();
+      await initializeStorage();
       console.log("✅ [Native] preferences.db recreated fresh");
     } catch (error) {
       console.error(
@@ -146,11 +104,11 @@ const SQlPreferencesStorage = {
       );
       throw new Error("Failed to destroy preferences database");
     }
-  },
+  }
 
   async saveSettings(settings: AppSettings): Promise<void> {
     try {
-      const db = await openPreferencesDatabase();
+      const db = await initializeStorage();
 
       const settingsData = JSON.stringify(settings);
       const now = new Date().toISOString();
@@ -169,11 +127,11 @@ const SQlPreferencesStorage = {
       console.error("❌ [Native] Error saving preferences:", error);
       throw new Error("Failed to save preferences");
     }
-  },
+  }
 
   async getSettings(): Promise<AppSettings | null> {
     try {
-      const db = await openPreferencesDatabase();
+      const db = await initializeStorage();
 
       const result = await db.getAllAsync<{ data: string }>(
         "SELECT data FROM settings WHERE id = 1 LIMIT 1",
@@ -191,30 +149,7 @@ const SQlPreferencesStorage = {
       console.error("❌ [Native] Error loading preferences:", error);
       return null;
     }
-  },
-};
+  }
+}
 
-// ============================================================================
-// PLATFORM DETECTION & EXPORT
-// ============================================================================
 
-const isWeb = Platform.OS === "web";
-
-export const preferencesStorage = {
-  saveSettings: (settings: AppSettings) =>
-    isWeb
-      ? webPreferencesStorage.saveSettings(settings)
-      : SQlPreferencesStorage.saveSettings(settings),
-
-  getSettings: () =>
-    isWeb
-      ? webPreferencesStorage.getSettings()
-      : SQlPreferencesStorage.getSettings(),
-
-  clearSettings: () =>
-    isWeb
-      ? webPreferencesStorage.clearSettings()
-      : SQlPreferencesStorage.clearSettings(),
-};
-
-export default preferencesStorage;

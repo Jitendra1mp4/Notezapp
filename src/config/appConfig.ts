@@ -22,6 +22,7 @@ const KDF_ITERATIONS =  IS_DEVELOPMENT? 10 : 100999 ;// NIST recommended: 100,00
 const SALT_SIZE = 32; // 256 bits
 const DK_SIZE = 32; // 256 bits for AES-256
 const IV_SIZE = 12; // 96 bits for GCM
+const STORAGE_KEY_PREFIX = `pro_corelogik_journal_app`;
 
 const LOCK_TIMEOUT_OPTIONS = [
   { label: '1 Minute', value: 60000 },
@@ -42,12 +43,14 @@ export const APP_CONFIG = {
   slug: APP_NAME_SLUG, // For expo slug
   packageName: `pro.corelogik.${APP_NAME_PACKAGE}`, // Android package name
   scheme: APP_NAME_PACKAGE, // Deep linking scheme
-
+  SQLITE_PREFERENCES_DB_NAME : `pro.corelogik.preferences.db`,
+  
   // we want to make db name independent of app name
-  dbName: `pro.corelogik.journal_app.db`, 
+  SQLITE_VAULT_DB_NAME: `pro.corelogik.journal_app.db`, 
 
+  
   // Storage key prefix - used for AsyncStorage and other storage mechanisms
-  storageKeyPrefix: `@${APP_NAME_NORMALIZED_UNDERSCORE}`, // e.g., "@d_journal_hub"
+  STORAGE_KEY_PREFIX, // e.g., "@d_journal_hub"
 
   KDF_ITERATIONS ,
   SALT_SIZE ,
@@ -57,19 +60,20 @@ export const APP_CONFIG = {
   LOCK_TIMEOUT_OPTIONS, 
 
   // Storage keys - all derived from the prefix
-  storageKeys: {
-    VAULT: `@${APP_NAME_NORMALIZED_UNDERSCORE}_vault`,
-    RECOVERY_KEY_DISPLAY: `@${APP_NAME_NORMALIZED_UNDERSCORE}_recovery_key_display`,
-    MASTER_KEY_SALT: `@${APP_NAME_NORMALIZED_UNDERSCORE}_master_key_salt`,
-    SECURITY_ANS_SALT: `@${APP_NAME_NORMALIZED_UNDERSCORE}_security_ans_key_salt`,
-    RECOVERY_KEY_SALT: `@${APP_NAME_NORMALIZED_UNDERSCORE}_recovery_key_salt`,
-    SECURITY_QUESTIONS: `@${APP_NAME_NORMALIZED_UNDERSCORE}_security_questions`,
-    SECURITY_ANSWERS_HASH: `@${APP_NAME_NORMALIZED_UNDERSCORE}_security_answers_hash`,
-    JOURNALS: `@${APP_NAME_NORMALIZED_UNDERSCORE}_journals`,
-    SETTINGS: `@${APP_NAME_NORMALIZED_UNDERSCORE}_settings`,
-    FIRST_LAUNCH: `@${APP_NAME_NORMALIZED_UNDERSCORE}_first_launch`,
-    VERIFICATION_TOKEN: `@${APP_NAME_NORMALIZED_UNDERSCORE}_verification_token`,
-    MIGRATION_COMPLETE_V1: `${APP_NAME_NORMALIZED_UNDERSCORE}_migration_complete_v1`,
+  STORAGE_KEYS: {
+    VAULT: `@${STORAGE_KEY_PREFIX}_vault`,
+    PREFERENCE_DB_KEY:`@${STORAGE_KEY_PREFIX}_preferences`,
+    RECOVERY_KEY_DISPLAY: `@${STORAGE_KEY_PREFIX}_recovery_key_display`,
+    MASTER_KEY_SALT: `@${STORAGE_KEY_PREFIX}_master_key_salt`,
+    SECURITY_ANS_SALT: `@${STORAGE_KEY_PREFIX}_security_ans_key_salt`,
+    RECOVERY_KEY_SALT: `@${STORAGE_KEY_PREFIX}_recovery_key_salt`,
+    SECURITY_QUESTIONS: `@${STORAGE_KEY_PREFIX}_security_questions`,
+    SECURITY_ANSWERS_HASH: `@${STORAGE_KEY_PREFIX}_security_answers_hash`,
+    JOURNALS: `@${STORAGE_KEY_PREFIX}_journals`,
+    SETTINGS: `@${STORAGE_KEY_PREFIX}_settings`,
+    FIRST_LAUNCH: `@${STORAGE_KEY_PREFIX}_first_launch`,
+    VERIFICATION_TOKEN: `@${STORAGE_KEY_PREFIX}_verification_token`,
+    MIGRATION_COMPLETE_V1: `${STORAGE_KEY_PREFIX}_migration_complete_v1`,
   },
 };
 

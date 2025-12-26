@@ -1,7 +1,7 @@
-import { getCryptoProvider } from "@/src/services/unifiedCryptoManager";
+import { getCryptoProvider } from "@/src/services/cryptoServiceProvider";
 import { resolveImmediately } from "@/src/utils/immediatePromiseResolver";
 import React, { useEffect, useState } from "react";
-import { Platform, ScrollView, StyleSheet, View } from "react-native";
+import { ScrollView, StyleSheet, View } from "react-native";
 import {
   Button,
   HelperText,
@@ -11,11 +11,8 @@ import {
   useTheme,
 } from "react-native-paper";
 import { SafeAreaView } from "react-native-safe-area-context";
-import {
-  getVault,
-  saveRecoveryKeyHash,
-  saveVault
-} from "../../services/unifiedStorageService";
+
+import { getVaultStorageProvider } from "@/src/services/vaultStorageProvider";
 import { useAppDispatch } from "../../stores/hooks";
 import {
   setAuthenticated,
@@ -25,9 +22,12 @@ import type { QAPair } from "../../types/crypto";
 import { Alert } from "../../utils/alert";
 
 const CryptoManager = getCryptoProvider() ;
+const VaultStorageProvider = getVaultStorageProvider()
 
 type RecoveryMethod = "answers" | "recoveryKey";
 type RecoveryStep = "method" | "verify" | "newPassword";
+
+
 
 const ForgotPasswordScreen: React.FC<{ navigation: any }> = ({
   navigation,
@@ -67,7 +67,7 @@ const ForgotPasswordScreen: React.FC<{ navigation: any }> = ({
 
   const loadVault = async () => {
     try {
-      const loadedVault = await getVault();
+      const loadedVault = await  VaultStorageProvider.getVault();
       if (!loadedVault) {
         Alert.alert(
           "No Account Found",
@@ -114,9 +114,7 @@ const ForgotPasswordScreen: React.FC<{ navigation: any }> = ({
       }));
 
       // Attempt to unlock vault with security answers
-      if (Platform.OS === 'web')
         await CryptoManager.unlockWithAnswers(vault, qaPairs);
-      else CryptoManager.unlockWithAnswers(vault, qaPairs);
 
       // Success! Move to password reset step
       Alert.alert(
@@ -153,7 +151,7 @@ const ForgotPasswordScreen: React.FC<{ navigation: any }> = ({
 
     try {
       // Attempt to verify recovery key by trying to recover
-      CryptoManager.recoverAndReset(vault, recoveryKey, newPassword || "temp");
+      await CryptoManager.recoverAndReset(vault, recoveryKey, newPassword || "temp");
 
       // Recovery key is valid
       Alert.alert(
@@ -207,17 +205,17 @@ const ForgotPasswordScreen: React.FC<{ navigation: any }> = ({
         }));
 
         // Unlock vault with security answers to get DK
-        const { dk } = CryptoManager.unlockWithAnswers(vault, qaPairs);
+        const { dk } = await CryptoManager.unlockWithAnswers(vault, qaPairs);
 
         // Use public method to rebuild vault with new password
-        newVault = CryptoManager.rebuildVaultWithNewPassword(
+        newVault = await CryptoManager.rebuildVaultWithNewPassword(
           vault,
           dk,
           newPassword,
         );
       } else {
         // For recovery key method, use recoverAndReset flow
-        const result = CryptoManager.recoverAndReset(
+        const result = await CryptoManager.recoverAndReset(
           vault,
           recoveryKey,
           newPassword,
@@ -227,11 +225,11 @@ const ForgotPasswordScreen: React.FC<{ navigation: any }> = ({
       }
 
       // Save updated vault
-      await saveVault(newVault);
+      await  VaultStorageProvider.saveVault(newVault);
 
       // If recovery key was reset, save and display it
       if (newRecoveryKeyResult) {
-        await saveRecoveryKeyHash(newRecoveryKeyResult);
+        await  VaultStorageProvider.saveRecoveryKeyHash(newRecoveryKeyResult);
 
         Alert.alert(
           "Password Reset Successfully!",
@@ -241,9 +239,9 @@ const ForgotPasswordScreen: React.FC<{ navigation: any }> = ({
           [
             {
               text: "I have saved the new Recovery Key",
-              onPress: () => {
+              onPress: async () => {
                 // Unlock with new password
-                const { dk } = CryptoManager.unlockWithPassword(
+                const { dk } = await CryptoManager.unlockWithPassword(
                   newVault,
                   newPassword,
                 );
@@ -255,7 +253,7 @@ const ForgotPasswordScreen: React.FC<{ navigation: any }> = ({
         );
       } else {
         // For security answers, just unlock with new password
-        const { dk } = CryptoManager.unlockWithPassword(newVault, newPassword);
+        const { dk } = await CryptoManager.unlockWithPassword(newVault, newPassword);
         dispatch(setAuthenticated(true));
         dispatch(setEncryptionKey(dk));
 

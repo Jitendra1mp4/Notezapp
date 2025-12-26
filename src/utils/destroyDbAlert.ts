@@ -1,17 +1,23 @@
 import { Platform } from "react-native";
-import { ResetStorage } from "../services/unifiedStorageService";
-import { useAppDispatch } from "../stores/hooks";
+import { getVaultStorageProvider } from "../services/vaultStorageProvider";
 import { logout } from "../stores/slices/authSlice";
 import { Alert } from "./alert";
 
-export const handleDestroy = async () => {
-  console.log("reset calling...");
+const VaultStorageProvider = getVaultStorageProvider()
+
+/**
+ * Shows confirmation and destroys database if confirmed by the user
+ * @param dispatch - accepts dispatch returned from useAppDispatch as useAppDispatch can not be invoked outside react component
+ */
+export const handleDestroy = async (dispatch:any) => {
+  console.log("inside handleDestroy...");
   const message = "⚠️ Are you sure you want to destroy Database?\nYou'll loss all your journals and Everything will be reset.";
-  const dispatch = useAppDispatch();
   const callReset = async () => {
-    await ResetStorage();
+    await VaultStorageProvider.clearAllData()
+    // ResetStorage();
     dispatch(logout());
   };
+
 
   if (Platform.OS === "web") {
     const wantToReset = confirm(message);

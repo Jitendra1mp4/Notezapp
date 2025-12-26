@@ -1,15 +1,12 @@
 import { TimePickerInput } from "@/src/components/common/TimePickerInput";
 
+import { getCryptoProvider } from "@/src/services/cryptoServiceProvider";
 import {
   cancelAllNotifications,
   requestNotificationPermissions,
   scheduleDailyReminder,
 } from "@/src/services/notificationService";
-import { getCryptoProvider } from "@/src/services/unifiedCryptoManager";
-import {
-  getVault,
-  saveVault
-} from "@/src/services/unifiedStorageService";
+
 import React, { useEffect, useState } from "react";
 import { Platform, ScrollView, StyleSheet, Switch, View } from "react-native";
 import {
@@ -23,6 +20,7 @@ import {
   useTheme,
 } from "react-native-paper";
 
+import { getVaultStorageProvider } from "@/src/services/vaultStorageProvider";
 import { Alert } from "@/src/utils/alert";
 import { handleDestroy } from "@/src/utils/destroyDbAlert";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -36,6 +34,7 @@ import {
   setTheme,
 } from "../../stores/slices/settingsSlice";
 const CryptoManager = getCryptoProvider();
+const VaultStorageProvider = getVaultStorageProvider()
 
 const SettingsScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
   const theme = useTheme();
@@ -142,7 +141,7 @@ const SettingsScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
     setIsSavingPassword(true);
     try {
       // Get current vault
-      const vaultData = await getVault();
+      const vaultData = await VaultStorageProvider.getVault();
       if (!vaultData) {
         Alert.alert("⚠️ Oops!", "Account not found");
         setIsChangingPassword(false);
@@ -151,7 +150,7 @@ const SettingsScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
 
       // Verify current password
       try {
-        CryptoManager.unlockWithPassword(vaultData as any, currentPassword);
+        await CryptoManager.unlockWithPassword(vaultData as any, currentPassword);
       } catch (error) {
         Alert.alert("⚠️ Oops!", "Current password is incorrect");
         throw error;
@@ -159,14 +158,14 @@ const SettingsScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
 
       // The encryptionKey we have is already decrypted DK
       // Use it to rebuild vault with new password
-      const updatedVault = CryptoManager.rebuildVaultWithNewPassword(
+      const updatedVault = await CryptoManager.rebuildVaultWithNewPassword(
         vaultData as any,
         encryptionKey,
         newPassword,
       );
 
       // Save updated vault
-      await saveVault(updatedVault);
+      await VaultStorageProvider.saveVault(updatedVault);
 
       // Update encryption key in context (it stays the same)
       // setEncryptionKey(encryptionKey); // Already set
@@ -337,7 +336,7 @@ const SettingsScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
             <Button
               mode="outlined"
               style={styles.resetButton}
-              onPress={async () => await handleDestroy()}
+              onPress={async () => await handleDestroy(dispatch)}
               textColor={theme.colors.error}
               icon="hammer"
             >

@@ -19,7 +19,7 @@ export interface KDFParams {
  */
 export interface Salts {
   master_salt: string; // For password-derived key
-  security_salt: string; // For security answer-derived key
+  security_answer_salt: string; // For security answer-derived key
   recovery_salt: string; // For recovery key-derived key
 }
 
@@ -29,7 +29,7 @@ export interface Salts {
  */
 export interface KeyWraps {
   dk_wrapped_by_password: string; // AES-256-GCM(DK, PWDK)
-  dk_wrapped_by_security: string; // AES-256-GCM(DK, SADK)
+  dk_wrapped_by_security_ans: string; // AES-256-GCM(DK, SADK)
   dk_wrapped_by_recovery: string; // AES-256-GCM(DK, RKDK)
 }
 
