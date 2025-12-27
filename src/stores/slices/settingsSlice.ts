@@ -10,7 +10,7 @@ export interface SettingsState {
   notificationTime: string;
   autoLockTimeout: number;
   instantLockOnBackground: boolean;
-  isExportInProgress: boolean;
+  isExportImportInProgress: boolean;
   isImagePickingInProgress:boolean;
 }
 
@@ -22,7 +22,7 @@ const initialState: SettingsState = {
   notificationTime: '20:00',
   autoLockTimeout: APP_CONFIG.LOCK_TIMEOUT_OPTIONS[0].value, // 1 minutes
   instantLockOnBackground: true,
-  isExportInProgress: false,
+  isExportImportInProgress: false,
   isImagePickingInProgress: false,
 };
 
@@ -50,8 +50,8 @@ const settingsSlice = createSlice({
       return { ...state, ...action.payload };
     },
 
-     setIsExportInProgress(state, action: PayloadAction<boolean>) {
-      state.isExportInProgress = action.payload;
+     setIsExportImportInProgress(state, action: PayloadAction<boolean>) {
+      state.isExportImportInProgress = action.payload;
     },
 
      setIsImagePickingInProgress(state, action: PayloadAction<boolean>) {
@@ -70,7 +70,7 @@ export const {
   setAutoLockTimeout,
   setInstantLockOnBackground,
   updateSettings,
-  setIsExportInProgress, // ✅ NEW
+  setIsExportImportInProgress, // ✅ NEW
   setIsImagePickingInProgress, // ✅ NEW
   resetSettings
 } = settingsSlice.actions;

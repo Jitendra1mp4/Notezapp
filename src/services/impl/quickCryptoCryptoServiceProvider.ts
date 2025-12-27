@@ -554,6 +554,55 @@ class QuickCryptoCryptoServiceProvider implements CryptoServiceProvider {
       );
     }
   }
+
+  // ==================== NEW: Encrypted Backup/Restore Implementation ====================
+
+  async encryptStringWithPassword(
+    password: string,
+    data: string
+  ): Promise<{ content: string; salt: string; iv: string }> {
+    try {
+      const salt = await this.generateSalt();
+      const iv = await this.generateIV();
+      
+      const key = await deriveKeyFromPassword(password, salt);
+      const fullEncryptedHex = await this.encryptAES256GCM(data, key, iv);
+      
+      // Remove IV from the front (first 24 chars)
+      const ivLength = APP_CONFIG.IV_SIZE * 2;
+      const cipherTextWithTagHex = fullEncryptedHex.substring(ivLength);
+
+      // Convert Hex to Base64 for smaller payload
+      const buffer = Buffer.from(cipherTextWithTagHex, 'hex');
+      const content = buffer.toString('base64');
+
+      return { content, salt, iv };
+    } catch (error) {
+      throw new Error(`Backup encryption failed: ${error instanceof Error ? error.message : String(error)}`);
+    }
+  }
+
+  async decryptStringWithPassword(
+    password: string,
+    encryptedDataBase64: string,
+    salt: string,
+    iv: string
+  ): Promise<string> {
+    try {
+      const key = await deriveKeyFromPassword(password, salt);
+      
+      // Convert Base64 back to Hex
+      const buffer = Buffer.from(encryptedDataBase64, 'base64');
+      const cipherTextWithTagHex = buffer.toString('hex');
+      
+      // Reconstruct for internal decrypt method: IV + Ciphertext
+      const reConstructedPayload = iv + cipherTextWithTagHex;
+      
+      return await this.decryptAES256GCM(reConstructedPayload, key);
+    } catch (error) {
+      throw new Error('Decryption failed. Incorrect password or corrupted file.');
+    }
+  }
 }
 
 export default QuickCryptoCryptoServiceProvider;

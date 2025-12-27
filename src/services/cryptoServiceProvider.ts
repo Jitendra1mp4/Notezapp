@@ -182,6 +182,33 @@ export interface CryptoServiceProvider {
    * @returns Promise<string> - Decrypted plain text
    */
   decryptData(dk: string, encryptedData: string): Promise<string>;
+
+
+  // ==================== Encrypted Backup/Restore ====================
+
+  /**
+   * Encrypt a string using a standalone password (for backups)
+   * Generates a new random salt, derives a key, and encrypts.
+   * @returns Promise containing the encrypted Base64 string, salt(hex), and iv(hex)
+   */
+  encryptStringWithPassword(
+    password: string, 
+    data: string
+  ): Promise<{ content: string; salt: string; iv: string }>;
+
+  /**
+   * Decrypt a string using a standalone password (for backups)
+   * @param password - The password provided by user
+   * @param encryptedDataBase64 - The ciphertext (Base64)
+   * @param salt - The salt used during encryption (Hex)
+   * @param iv - The IV used during encryption (Hex)
+   */
+  decryptStringWithPassword(
+    password: string, 
+    encryptedDataBase64: string, 
+    salt: string, 
+    iv: string
+  ): Promise<string>;
 }
 
 /**

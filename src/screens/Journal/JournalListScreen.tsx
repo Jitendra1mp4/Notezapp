@@ -1,21 +1,26 @@
 // src/screens/Journal/JournalListScreen.tsx
 
-import { ExportModal } from "@/src/components/common/ExportModal";
-import { setIsExportInProgress } from "@/src/stores/slices/settingsSlice";
+import { ExportFormat, ExportModal } from "@/src/components/common/ExportModal";
+import { setIsExportImportInProgress } from "@/src/stores/slices/settingsSlice";
 import { getMarkdownStyles } from "@/src/utils/markdownStyles";
 import { getJournalCardStyle } from "@/src/utils/theme";
 
 import { useFocusEffect } from "@react-navigation/native";
-import { format, isFuture, parseISO } from "date-fns";
-import * as FileSystem from "expo-file-system/legacy";
-import * as Sharing from "expo-sharing";
+import { format as DateFormat, isFuture, parseISO } from "date-fns";
 import React, { useCallback, useMemo, useState } from "react";
 import { FlatList, RefreshControl, StyleSheet, View } from "react-native";
 import Markdown from "react-native-markdown-display";
-import { Card, FAB, IconButton, Searchbar, Text, useTheme } from "react-native-paper";
+import {
+  Card,
+  FAB,
+  IconButton,
+  Searchbar,
+  Text,
+  useTheme,
+} from "react-native-paper";
 import { SafeAreaView } from "react-native-safe-area-context";
 
-import { exportAsJSON, exportAsMarkdown, exportAsPDF } from "@/src/services/exportService";
+import { generateExportFile, shareFile } from "@/src/services/exportService";
 import { getVaultStorageProvider } from "@/src/services/vaultStorageProvider";
 import { useAppDispatch, useAppSelector } from "@/src/stores/hooks";
 import {
@@ -25,8 +30,9 @@ import {
 } from "@/src/stores/slices/journalsSlice";
 import type { Journal } from "@/src/types";
 import { Alert } from "@/src/utils/alert";
+import { resolveImmediately } from "@/src/utils/immediatePromiseResolver";
 
-const VaultStorageProvider = getVaultStorageProvider()
+const VaultStorageProvider = getVaultStorageProvider();
 
 const JournalListScreen: React.FC<{ navigation: any; route: any }> = ({
   navigation,
@@ -35,20 +41,24 @@ const JournalListScreen: React.FC<{ navigation: any; route: any }> = ({
   const theme = useTheme();
   const dispatch = useAppDispatch();
 
+  const selectedDate = route.params?.selectedDate as string | undefined;
+
+  // --- Redux State ---
   const encryptionKey = useAppSelector((state) => state.auth.encryptionKey);
   const journals = useAppSelector((state) => state.journals.journals);
   const isGlobalLoading = useAppSelector((state) => state.journals.isLoading);
 
-  const selectedDate = route.params?.selectedDate as string | undefined;
 
+  // --- Local UI State ---
   const [searchQuery, setSearchQuery] = useState("");
   const [refreshing, setRefreshing] = useState(false);
 
   const [isExporting, setIsExporting] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
 
-  const [showExportModal, setShowExportModal] = useState(false);
-
+  const [exportModalVisible, setExportModalVisible] = useState(false);
+ 
+  
   const filteredJournals = useMemo(() => {
     let result = [...journals];
 
@@ -81,7 +91,8 @@ const JournalListScreen: React.FC<{ navigation: any; route: any }> = ({
 
     dispatch(setLoading(true));
     try {
-      const loadedJournals = await VaultStorageProvider.listJournals(encryptionKey);
+      const loadedJournals =
+        await VaultStorageProvider.listJournals(encryptionKey);
       dispatch(setJournals(loadedJournals));
     } catch (error) {
       console.error("❌ Error loading journals:", error);
@@ -105,60 +116,70 @@ const JournalListScreen: React.FC<{ navigation: any; route: any }> = ({
     }, [encryptionKey, journals.length, loadJournals]),
   );
 
-  const handleExport = async (exportFormat: "json" | "text" | "pdf") => {
-    if (!encryptionKey) return;
+  /**
+   * Called when the user taps the export icon on a specific date header in JournalList.
+   */
+  const handleOpenExport = useCallback(() => {
+    setExportModalVisible(true);
+  }, []);
 
+  /**
+   * Called by the ExportModal when the user confirms their choice.
+   * Encapsulates the logic for both standard and encrypted exports.
+   */
+  const onExport = async (exportFormat: ExportFormat, password?: string) => {
+  
     if (filteredJournals.length === 0) {
-      Alert.alert("Nothing to Export", "No journals match your current filters.");
+      Alert.alert("No Journals", "No entries found for this date.");
+      setExportModalVisible(false);
       return;
     }
 
-    setIsExporting(true);
-    dispatch(setIsExportInProgress(true));
+    // 2. Close UI: Dismiss modal immediately for better UX
+    setExportModalVisible(false);
 
-    try {
-      const dateSuffix = selectedDate || format(new Date(), "yyyy-MM-dd");
-
-      let fileUri: string;
-      let fileName: string;
-      let mimeType: string;
-
-      if (exportFormat === "json") {
-        const content = await exportAsJSON(filteredJournals);
-        fileName = `journals-${dateSuffix}.json`;
-        mimeType = "application/json";
-        fileUri = `${FileSystem.documentDirectory}${fileName}`;
-        await FileSystem.writeAsStringAsync(fileUri, content);
-      } else if (exportFormat === "text") {
-        const content = await exportAsMarkdown(filteredJournals);
-        fileName = `journals-${dateSuffix}.md`;
-        mimeType = "text/markdown";
-        fileUri = `${FileSystem.documentDirectory}${fileName}`;
-        await FileSystem.writeAsStringAsync(fileUri, content);
-      } else {
-        fileUri = await exportAsPDF(filteredJournals);
-        fileName = `journals-${dateSuffix}.pdf`;
-        mimeType = "application/pdf";
-      }
-
-      if (await Sharing.isAvailableAsync()) {
-        await Sharing.shareAsync(fileUri, {
-          mimeType,
-          dialogTitle: "Share Journals",
-        });
-      } else {
-        Alert.alert("Export Complete", `File saved: ${fileUri}`);
-      }
-    } catch (error) {
-      console.error("❌ Export error:", error);
-      Alert.alert("Export Failed", "Could not create export file");
-    } finally {
-      setIsExporting(false);
-      setShowExportModal(false);
-      dispatch(setIsExportInProgress(false));
-    }
+    // 3. Process: Hand off to the heavy lifting function
+    await processExport(exportFormat,  password);
   };
 
+  /**
+   * Handles the actual generation and sharing of the file.
+   */
+  const processExport = async (exportFormat: ExportFormat,password?: string) => {
+    if (!encryptionKey) {
+      Alert.alert("Error", "Encryption key missing. Please login again.");
+      return;
+    }
+
+    dispatch(setIsExportImportInProgress(true));
+
+    
+    // ✅ YIELD TO UI: Allow the modal to visually close before the JS thread freezes for encryption
+    await new Promise((resolve) => resolveImmediately(resolve));
+
+    try {
+
+
+      // Generate the file (JSON, PDF, Text, or Encrypted)
+      const { uri, filename } = await generateExportFile(
+        exportFormat,
+        filteredJournals,
+        password,
+      );
+
+      // Share the result
+      if (uri) {
+        await shareFile(uri, filename);
+      }
+    } catch (e: any) {
+      console.error("Export failed:", e);
+      Alert.alert("Export Failed", e.message || "An unknown error occurred.");
+    } finally {
+      dispatch(setIsExportImportInProgress(false));
+      
+    }
+  };
+  
   const handleDeleteJournal = async (journalId: string) => {
     Alert.alert(
       "Delete?",
@@ -208,7 +229,7 @@ const JournalListScreen: React.FC<{ navigation: any; route: any }> = ({
   };
 
   const selectedDateFormatted = selectedDate
-    ? format(parseISO(selectedDate), "EEEE, MMMM do, yyyy")
+    ? DateFormat(parseISO(selectedDate), "EEEE, MMMM do, yyyy")
     : null;
 
   /**
@@ -216,9 +237,9 @@ const JournalListScreen: React.FC<{ navigation: any; route: any }> = ({
    */
   const JournalCard = ({ item, index }: { item: Journal; index: number }) => {
     const dateObj = new Date(item.date);
-    const day = format(dateObj, "dd");
-    const month = format(dateObj, "MMM").toUpperCase();
-    const formattedTime = format(dateObj, "hh:mm a");
+    const day = DateFormat(dateObj, "dd");
+    const month = DateFormat(dateObj, "MMM").toUpperCase();
+    const formattedTime = DateFormat(dateObj, "hh:mm a");
 
     const hasImages = !!item.images && item.images.length > 0;
 
@@ -233,8 +254,7 @@ const JournalListScreen: React.FC<{ navigation: any; route: any }> = ({
         ? item.text.substring(0, 180).replace(/\n/g, " ") + "…"
         : item.text;
 
-    const bannerBg =
-      theme.dark ? "rgba(0,0,0,0.18)" : "rgba(255,255,255,0.55)";
+    const bannerBg = theme.dark ? "rgba(0,0,0,0.18)" : "rgba(255,255,255,0.55)";
 
     return (
       <Card
@@ -406,14 +426,16 @@ const JournalListScreen: React.FC<{ navigation: any; route: any }> = ({
       style={[styles.container, { backgroundColor: theme.colors.background }]}
       edges={["bottom"]}
     >
+      {/* New Smart Export Modal 
+          Handles format selection and password prompting internally 
+      */}
       <ExportModal
-        visible={showExportModal}
+        visible={exportModalVisible}
         journalsList={filteredJournals}
-        selectedDate={selectedDate || format(new Date(), "yyyy-MM-dd")}
-        onExport={handleExport}
-        onClose={() => setShowExportModal(false)}
+        selectedDate={selectedDate || DateFormat(new Date(), "yyyy-MM-dd")}
+        onClose={() => setExportModalVisible(false)}
+        onExport={onExport}
       />
-
       {/* Header */}
       <Card
         style={[
@@ -436,9 +458,9 @@ const JournalListScreen: React.FC<{ navigation: any; route: any }> = ({
             <IconButton
               icon="export-variant"
               mode="contained-tonal"
-              onPress={() => setShowExportModal(true)}
+              onPress={() => handleOpenExport()}
               disabled={
-                filteredJournals.length === 0 || isDeleting || isExporting
+                filteredJournals.length === 0 || isDeleting 
               }
             />
           </View>

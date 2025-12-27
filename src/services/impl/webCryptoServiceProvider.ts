@@ -38,6 +38,27 @@ const AUTH_TAG_LENGTH_HEX = AUTH_TAG_LENGTH * 2; // 32 hex characters
 
 // ==================== Utility Functions ====================
 
+// Helper for Base64 (Web)
+function bufToBase64(buffer: ArrayBuffer): string {
+  let binary = '';
+  const bytes = new Uint8Array(buffer);
+  const len = bytes.byteLength;
+  for (let i = 0; i < len; i++) {
+    binary += String.fromCharCode(bytes[i]);
+  }
+  return window.btoa(binary);
+}
+
+function base64ToBuf(base64: string): ArrayBuffer {
+  const binary_string = window.atob(base64);
+  const len = binary_string.length;
+  const bytes = new Uint8Array(len);
+  for (let i = 0; i < len; i++) {
+    bytes[i] = binary_string.charCodeAt(i);
+  }
+  return bytes.buffer;
+}
+
 function bufToHex(buf: ArrayBuffer): string {
   const bytes = new Uint8Array(buf);
   return Array.from(bytes)
@@ -86,6 +107,8 @@ async function deriveKeyFromPassword(
   password: string,
   salt: string
 ): Promise<string> {
+
+
   const passwordKey = await subtle.importKey(
     'raw',
     utf8ToBuf(password),
@@ -94,18 +117,22 @@ async function deriveKeyFromPassword(
     ['deriveBits']
   );
 
-  console.log('time before key derivation', new Date())
-  const bits = await subtle.deriveBits(
-    {
-      name: 'PBKDF2',
-      salt: utf8ToBuf(salt), // Salt as UTF-8 for compatibility
-      iterations: APP_CONFIG.KDF_ITERATIONS,
-      hash: 'SHA-256',
-    },
-    passwordKey,
-    APP_CONFIG.DK_SIZE * 8 // bits
-  );
-  console.log('time after key derivation',new Date())
+
+    
+    console.log('time before key derivation', new Date())
+    const bits = await subtle.deriveBits(
+      {
+        name: 'PBKDF2',
+        salt: utf8ToBuf(salt), // Salt as UTF-8 for compatibility
+        iterations: APP_CONFIG.KDF_ITERATIONS,
+        hash: 'SHA-256',
+      },
+      passwordKey,
+      APP_CONFIG.DK_SIZE * 8 // bits
+    );
+    console.log('time after key derivation',new Date())
+    
+    
 
   return bufToHex(bits);
 }
@@ -280,19 +307,23 @@ class WebCryptoServiceProvider implements CryptoServiceProvider {
 
     // 1. Generate the Master Data Key
     const dk = await this.generateDataKey();
-
+  
+    
     // 2. Generate unique salts
     const salts: Salts = {
       master_salt: await this.generateSalt(),
       security_answer_salt: await this.generateSalt(),
       recovery_salt: await this.generateSalt(),
     };
-
+    
+    
     // 3. Wrap DK with Password
     const passwordDerivedKey = await deriveKeyFromPassword(password, salts.master_salt);
+  
+    
     const passwordIV = await this.generateIV();
     const dk_wrapped_by_password = await this.encryptAES256GCM(dk, passwordDerivedKey, passwordIV);
-
+    
     // 4. Wrap DK with Security Answers
     const answerStrings = qaPairs.map((qa) => qa.answer);
     const normalizedAnswers = this.normalizeAnswers(answerStrings);
@@ -301,6 +332,7 @@ class WebCryptoServiceProvider implements CryptoServiceProvider {
       salts.security_answer_salt
     );
     const securityIV = await this.generateIV();
+    
     const dk_wrapped_by_security = await this.encryptAES256GCM(dk, SADerivedKey, securityIV);
 
     // 5. Wrap DK with Recovery Key
@@ -617,6 +649,69 @@ class WebCryptoServiceProvider implements CryptoServiceProvider {
       throw new Error(
         `Data decryption failed: ${error instanceof Error ? error.message : String(error)}`
       );
+    }
+  }
+
+  // NOTE: Need to expose encryptAES256GCM for use in new method or duplicate logic. 
+  // Since it's private in original, I will duplicate logic inside encryptStringWithPassword to avoid breaking class structure or making it public.
+  
+  // ==================== Encrypted Backup/Restore Implementation ====================
+
+  async encryptStringWithPassword(
+    password: string,
+    data: string
+  ): Promise<{ content: string; salt: string; iv: string }> {
+    try {
+      const salt = await this.generateSalt();
+      const iv = await this.generateIV();
+      const keyHex = await deriveKeyFromPassword(password, salt);
+
+      // Manual encryption logic here to ensure access
+      const keyBuf = hexToBuf(keyHex);
+      const ivBuf = hexToBuf(iv);
+      const cryptoKey = await subtle.importKey('raw', keyBuf, { name: 'AES-GCM' }, false, ['encrypt']);
+      
+      const encryptedBuf = await subtle.encrypt(
+        { name: 'AES-GCM', iv: ivBuf, tagLength: 128 },
+        cryptoKey,
+        utf8ToBuf(data)
+      );
+
+      // Convert to Base64
+      const content = bufToBase64(encryptedBuf);
+
+      return { content, salt, iv };
+    } catch (error) {
+      throw new Error(`Backup encryption failed: ${error}`);
+    }
+  }
+
+  async decryptStringWithPassword(
+    password: string,
+    encryptedDataBase64: string,
+    salt: string,
+    iv: string
+  ): Promise<string> {
+    try {
+      const keyHex = await deriveKeyFromPassword(password, salt);
+      
+      const keyBuf = hexToBuf(keyHex);
+      const ivBuf = hexToBuf(iv);
+      const encryptedBuf = base64ToBuf(encryptedDataBase64);
+
+      const cryptoKey = await subtle.importKey('raw', keyBuf, { name: 'AES-GCM' }, false, ['decrypt']);
+
+      const plaintextBuf = await subtle.decrypt(
+        { name: 'AES-GCM', iv: ivBuf, tagLength: 128 },
+        cryptoKey,
+        encryptedBuf
+      );
+
+      const plaintext = bufToUtf8(plaintextBuf);
+      if (!plaintext) throw new Error('Empty result');
+      return plaintext;
+    } catch (error) {
+      throw new Error('Decryption failed. Incorrect password or corrupted file.');
     }
   }
 }

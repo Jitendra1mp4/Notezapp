@@ -20,21 +20,26 @@ import {
   useTheme,
 } from "react-native-paper";
 
+import { ExportPasswordDialog } from "@/src/components/common/ExportPasswordDialog";
+import { generateExportFile, shareFile } from "@/src/services/exportService";
 import { getVaultStorageProvider } from "@/src/services/vaultStorageProvider";
+import { Journal } from "@/src/types";
 import { Alert } from "@/src/utils/alert";
 import { handleDestroy } from "@/src/utils/destroyDbAlert";
+import { resolveImmediately } from "@/src/utils/immediatePromiseResolver";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { APP_CONFIG } from "../../config/appConfig";
 import { useAppDispatch, useAppSelector } from "../../stores/hooks";
 import {
   setAutoLockTimeout,
   setInstantLockOnBackground,
+  setIsExportImportInProgress,
   setNotificationsEnabled,
   setNotificationTime,
   setTheme,
 } from "../../stores/slices/settingsSlice";
 const CryptoManager = getCryptoProvider();
-const VaultStorageProvider = getVaultStorageProvider()
+const VaultStorageProvider = getVaultStorageProvider();
 
 const SettingsScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
   const theme = useTheme();
@@ -52,6 +57,9 @@ const SettingsScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
   const [isSavingPassword, setIsSavingPassword] = useState(false);
   const [isChangingPassword, setIsChangingPassword] = useState(false);
   const [confirmNewPassword, setConfirmNewPassword] = useState("");
+
+  const [exportPasswordModalVisible, setExportPasswordModalVisible] =
+    useState(false);
 
   let passwordsMatch = newPassword === confirmNewPassword;
   let isPasswordValid = newPassword.length >= 8;
@@ -190,6 +198,64 @@ const SettingsScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
     return option
       ? option.label
       : `${Math.round(settings.autoLockTimeout / 60000)} Minutes`;
+  };
+
+  const performExportAndDestroyDb = async (password?: string) => {
+    // setIsExporting(true);
+    if (!encryptionKey) {
+      Alert.alert("Oops!", "Not Unauthenticated!");
+      return;
+    }
+
+    // Yield to UI
+    await new Promise((resolve) => resolveImmediately(resolve));
+
+    try {
+      dispatch(setIsExportImportInProgress(true));
+
+      let loadedJournals: Journal[] = [];
+      try {
+        loadedJournals = await VaultStorageProvider.listJournals(encryptionKey);
+      } catch (error) {
+        console.error("❌ Error loading journals:", error);
+        Alert.alert(
+          "Oops!",
+          "Failed to load journals to backup before destroying data.",
+        );
+        throw new Error(
+          "Failed to load journals to backup before destroying data.",
+        );
+      }
+      const { uri, filename } = await generateExportFile(
+        "encrypted",
+        loadedJournals,
+        password,
+      );
+
+      // Share Logic
+      if (Platform.OS !== "web") {
+        await shareFile(uri, filename);
+      }
+
+      if (Platform.OS === "web") {
+        // above share file function downloads on web so show alert.
+        Alert.alert(
+          "Success",
+          `✅ Encrypted Backup of ${loadedJournals.length} journal(s) succeed. \n\nFile downloaded: ${filename}`,
+        );
+      }
+      await handleDestroy(dispatch);
+    } catch (error: any) {
+      console.error("Export error:", error);
+      Alert.alert(
+        "Oops!",
+        "Export Failed",
+        error.message || "An unknown error occurred.",
+      );
+    } finally {
+      // setIsExporting(false);
+      dispatch(setIsExportImportInProgress(false));
+    }
   };
 
   return (
@@ -336,7 +402,13 @@ const SettingsScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
             <Button
               mode="outlined"
               style={styles.resetButton}
-              onPress={async () => await handleDestroy(dispatch)}
+              onPress={async () => {
+                Alert.alert(
+                      "Info",
+                      "A before destroying your data. A encrypted backup will be generated.\nyou can use it recover your data later.",
+                    );
+                setExportPasswordModalVisible(true);
+              }}
               textColor={theme.colors.error}
               icon="hammer"
             >
@@ -366,6 +438,12 @@ const SettingsScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
           </View>
         </View>
       </ScrollView>
+
+      <ExportPasswordDialog
+        visible={exportPasswordModalVisible}
+        onDismiss={() => setExportPasswordModalVisible(false)}
+        onSubmit={(exportPassword) => performExportAndDestroyDb(exportPassword)}
+      />
 
       {/* Keep these dialogs exactly as in your file */}
       {/* Timeout options dialog */}

@@ -23,7 +23,7 @@ import {
 import {
   logout
 } from './src/stores/slices/authSlice';
-import { setIsExportInProgress, setIsImagePickingInProgress, updateSettings } from './src/stores/slices/settingsSlice';
+import { setIsExportImportInProgress, setIsImagePickingInProgress, updateSettings } from './src/stores/slices/settingsSlice';
 
 
 const PreferenceStorageProvider = getPreferenceStorageProvider()
@@ -77,12 +77,12 @@ function AppContent() {
         if (
           isAuthenticated 
           && settings.instantLockOnBackground  
-          && !settings.isExportInProgress // ✅ NEW CONDITION
+          && !settings.isExportImportInProgress // ✅ NEW CONDITION
           && !settings.isImagePickingInProgress // ✅ NEW CONDITION
         ) {
           console.log('🔒 INSTANT LOCK: Locking app immediately');
           dispatch(logout());
-        } else if (settings.isExportInProgress) {
+        } else if (settings.isExportImportInProgress) {
           console.log('📤 EXPORT IN PROGRESS: Skipping instant lock');
         }
       } 
@@ -90,9 +90,9 @@ function AppContent() {
       // 2. App returns to Foreground
       else if (appState.current.match(/inactive|background/) && nextAppState === 'active') {
         // ✅ Clear export flag when returning to foreground
-        if (settings.isExportInProgress) {
+        if (settings.isExportImportInProgress) {
           console.log('📤 EXPORT COMPLETE: Clearing export flag');
-          dispatch(setIsExportInProgress(false));
+          dispatch(setIsExportImportInProgress(false));
         }
 
 
@@ -124,7 +124,7 @@ function AppContent() {
     isAuthenticated, 
     settings.autoLockTimeout, 
     settings.instantLockOnBackground,
-    settings.isExportInProgress, // ✅ NEW DEPENDENCY
+    settings.isExportImportInProgress, // ✅ NEW DEPENDENCY
     settings.isImagePickingInProgress, // ✅ NEW DEPENDENCY
     dispatch
   ]);
