@@ -103,6 +103,20 @@ export interface QAPair {
  * Answer normalization result
  */
 export interface NormalizedAnswers {
-  combined: string; // "answer1@@answer2@@answer3"
-  individual: string[]; // Normalized individual answers
+  combined: string;
+  individual: string[];
+}
+
+/**
+ * Structure for Encrypted Backup File
+ * This wraps the standard export JSON in an encrypted shell
+ */
+export interface EncryptedBackupPayload {
+  version: number;
+  type: 'encrypted_backup';
+  appName: string;
+  exportDate: string;
+  salt: string; // Hex string for KDF
+  iv: string;   // Hex string for AES-GCM
+  data: string; // Base64 string (Ciphertext + AuthTag)
 }

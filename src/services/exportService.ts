@@ -1,4 +1,4 @@
-import { format, parseISO } from "date-fns";
+import { format, formatDate, parseISO } from "date-fns";
 import * as FileSystem from "expo-file-system/legacy";
 import * as Print from "expo-print";
 import * as Sharing from "expo-sharing";
@@ -7,6 +7,8 @@ import { Platform } from "react-native";
 import APP_CONFIG from "../config/appConfig";
 import { PDF_EXPORT_STYLESHEET } from "../config/PDF_EXPORT_STYLESHEET";
 import { Journal } from "../types";
+import { EncryptedBackupPayload } from "../types/crypto";
+import getCryptoProvider from "./cryptoServiceProvider";
 import { base64ToDataUri } from "./imageService";
 
 /**
@@ -41,6 +43,97 @@ function markdownToHtml(md: string) {
 
   return marked.parse(md);
 }
+
+/**
+ * Export journals as an Encrypted JSON Backup
+ */
+export const exportAsEncryptedBackup = async (
+  journals: Journal[], 
+  password: string
+): Promise<string> => {
+  const CryptoManager = getCryptoProvider();
+
+  // 1. Create the plain data object
+  const plainData = {
+    version: "1.0",
+    appName: APP_CONFIG.displayName,
+    exportDate: new Date().toISOString(),
+    totalEntries: journals.length,
+    journals: journals,
+  };
+
+  const plainString = JSON.stringify(plainData);
+
+  // 2. Encrypt it
+  const { content, salt, iv } = await CryptoManager.encryptStringWithPassword(
+    password, 
+    plainString
+  );
+
+  // 3. Create the final wrapper structure
+  const backupPayload: EncryptedBackupPayload = {
+    version: 1,
+    type: 'encrypted_backup',
+    appName: APP_CONFIG.displayName,
+    exportDate: new Date().toISOString(),
+    salt,
+    iv,
+    data: content // Base64
+  };
+
+  return JSON.stringify(backupPayload, null, 2);
+};
+
+
+
+// Add this to src/services/exportService.ts
+
+/**
+ * Unified function to handle file generation based on format
+ */
+export const generateExportFile = async (
+  format: 'json' | 'pdf' | 'text' | 'encrypted',
+  journals: Journal[],
+  password?: string
+): Promise<{ uri: string; filename: string }> => {
+  
+  const timestamp = formatDate(new Date(), 'yyyy-MM-dd-HHmmss');
+  let filename = '';
+  let content = '';
+  let uri = '';
+
+  switch (format) {
+    case 'encrypted':
+      if (!password) throw new Error('Password required for encryption.');
+      filename = `${APP_CONFIG.slug.toLowerCase()}-export-${timestamp}.enc.json`;
+      content = await exportAsEncryptedBackup(journals, password);
+      uri = await saveTextFile(content, filename);
+      break;
+
+    case 'json':
+      filename = `${APP_CONFIG.slug.toLowerCase()}-export-${timestamp}.json`;
+      content = await exportAsJSON(journals);
+      uri = await saveTextFile(content, filename);
+      break;
+
+    case 'text':
+      filename = `${APP_CONFIG.slug.toLowerCase()}-export-${timestamp}.md`;
+      content = await exportAsMarkdown(journals);
+      uri = await saveTextFile(content, filename);
+      break;
+
+    case 'pdf':
+      filename = `${APP_CONFIG.slug.toLowerCase()}-export-${timestamp}.pdf`;
+      uri = await exportAsPDF(journals);
+      break;
+    
+    default:
+      throw new Error(`Unsupported format: ${format}`);
+  }
+
+  return { uri, filename };
+};
+
 /**
  * Export journals as plain markdown
  */
