@@ -1,5 +1,4 @@
 import { setIsExportImportInProgress } from "@/src/stores/slices/settingsSlice";
-import { format as formatDate } from "date-fns";
 import React, { useState } from "react";
 import { Platform, ScrollView, StyleSheet, View } from "react-native";
 import {
@@ -15,7 +14,6 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { ExportPasswordDialog } from "../../components/common/ExportPasswordDialog";
 // ✅ Import the shared generator function
-import DateTimePicker from "@react-native-community/datetimepicker";
 import { generateExportFile, shareFile } from "../../services/exportService";
 import { useAppDispatch, useAppSelector } from "../../stores/hooks";
 import { Alert } from "../../utils/alert";
@@ -126,35 +124,6 @@ const ExportScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
     }
   };
 
-  // --- Render Helpers (Same as before) ---
-  const DateSelector = ({ label, date, setDate, show, setShow }: any) => (
-    <View style={styles.dateRow}>
-      <Text variant="bodyMedium">{label}:</Text>
-      {Platform.OS === 'web' ? (
-         <Button mode="outlined" onPress={() => Alert.alert("Demo", "Web Date Picker Placeholder")}>
-            {date ? formatDate(date, 'MMM dd, yyyy') : "Select Date"}
-         </Button>
-      ) : 
-      (
-        <>
-          <Button mode="outlined" onPress={() => setShow(true)} compact>
-            {date ? formatDate(date, 'MMM dd, yyyy') : "Select"}
-          </Button>
-          {show && (
-            <DateTimePicker
-              value={date || new Date()}
-              mode="date"
-              display="default"
-              onChange={(event, selectedDate) => {
-                setShow(false);
-                if (selectedDate) setDate(selectedDate);
-              }}
-            />
-          )}
-        </>
-      )}
-    </View>
-  );
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]} edges={["bottom"]}>
