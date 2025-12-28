@@ -2,10 +2,17 @@
 import { StatusBar } from 'expo-status-bar';
 import React, { useEffect, useRef, useState } from 'react';
 import { AppState, AppStateStatus, Platform, View } from 'react-native';
-import 'react-native-get-random-values';
-import { install } from 'react-native-quick-crypto';
-if (Platform.OS !== 'web'){
-  install() ;
+// import 'react-native-get-random-values';
+// import { install } from 'react-native-quick-crypto';
+// if (Platform.OS !== 'web'){
+//   install() ;
+// }
+
+// ✅ SAFE POLYFILL STRATEGY
+if (Platform.OS !== 'web') {
+  // Only require and install quick-crypto on Native (iOS/Android)
+  const QuickCrypto = require('react-native-quick-crypto');
+  QuickCrypto.install();
 }
 
 import { Text } from 'react-native-paper';

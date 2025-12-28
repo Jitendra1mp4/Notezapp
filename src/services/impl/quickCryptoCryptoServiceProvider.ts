@@ -13,7 +13,7 @@
  * @version 2.0.0 - AES-GCM Migration
  */
 
-import 'react-native-get-random-values';
+// import 'react-native-get-random-values';
 import QuickCrypto from 'react-native-quick-crypto';
 import { v4 as uuidv4 } from 'uuid';
 import APP_CONFIG from '../../config/appConfig';
