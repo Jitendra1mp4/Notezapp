@@ -89,7 +89,7 @@ export const MoodSelector: React.FC<MoodSelectorProps> = ({
                 },
                 isSelected && styles.moodButtonSelected,
               ]}
-              activeOpacity={0.7}
+              // activeOpacity={0.7}
             >
               <Text style={styles.emoji}>{mood.emoji}</Text>
               <Text
@@ -157,36 +157,35 @@ const styles = StyleSheet.create({
     paddingVertical: 4,
   },
   moodButton: {
-    paddingHorizontal: 8,
-    paddingVertical: 1,
-    borderRadius: 16,
-    marginRight: 10,
+    paddingHorizontal: 3,
+    paddingVertical: 2,
+    borderRadius:5,
+    marginHorizontal:3,
     alignItems: 'center',
     justifyContent: 'center',
    flexDirection:'row',
-    borderWidth: 2,
+    
   },
   moodButtonSelected: {
-    borderWidth: 2,
-    transform: [{ scale: 1.05 }],
+    // for now nothing, can be added later if needed.
   },
   emoji: {
-    fontSize: 20,
-    marginBottom: 1,
+    fontSize: 15,
+    // marginBottom: 1,
   },
   moodLabel: {
     fontWeight: '300',
-    fontSize:10,    
-    fontStyle:'italic'
+    fontSize:11,    
+    // fontStyle:'italic'
   },
   selectedMoodBadge: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    marginTop: 12,
-    paddingVertical: 10,
-    paddingHorizontal: 16,
-    borderRadius: 20,
+    // marginTop: 12,
+    // paddingVertical: 10,
+    // paddingHorizontal: 16,
+    // borderRadius: 20,
     alignSelf: 'center',
   },
   selectedMoodEmoji: {
