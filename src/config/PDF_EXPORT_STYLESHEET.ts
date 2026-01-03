@@ -425,6 +425,27 @@ export const PDF_EXPORT_STYLESHEET  = `
         page-break-after: always;
         break-after: page;
       }
+
+
+      .entry-mood {
+        display: inline-flex;
+        align-items: center;
+        background: #e8f5e9;
+        padding: 6px 12px;
+        border-radius: 16px;
+        margin-bottom: 12px;
+        gap: 6px;
+      }
+
+      .mood-emoji {
+        font-size: 16px;
+      }
+
+      .mood-label {
+        font-size: 12px;
+        font-weight: 600;
+        color: #2e7d32;
+      }
     }
   </style>
 `

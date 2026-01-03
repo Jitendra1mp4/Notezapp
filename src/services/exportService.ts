@@ -4,6 +4,7 @@ import * as Print from "expo-print";
 import * as Sharing from "expo-sharing";
 import { marked } from "marked";
 import { Platform } from "react-native";
+import { MOOD_OPTIONS } from "../components/journal/MoodSelector";
 import APP_CONFIG from "../config/appConfig";
 import { PDF_EXPORT_STYLESHEET } from "../config/PDF_EXPORT_STYLESHEET";
 import { Journal } from "../types";
@@ -153,7 +154,16 @@ export const exportAsMarkdown = async (
     }
     markdownContent += `*Entry ${index + 1}*\n`;
     markdownContent += `*Date: ${date}*\n`;
+
+     if (journal.mood) {
+        const moodOption = MOOD_OPTIONS.find(m => m.value === journal.mood);
+        if (moodOption) {
+          markdownContent += `${moodOption.emoji} Mood: ${moodOption.label}\n`;
+        }
+      }
+
     markdownContent += `\n${journal.text}\n`;
+
     if (journal.images && journal.images.length > 0) {
       markdownContent += `\n[${journal.images.length} image(s) attached]\n`;
     }
@@ -241,6 +251,7 @@ export const exportAsPDF = async (journals: Journal[]): Promise<string> => {
     const formattedDate = format(dateObj, "EEEE, MMMM dd, yyyy");
     const formattedTime = format(dateObj, "hh:mm a");
 
+    
     htmlContent += `
     <div class="journal-entry">
       <div class="entry-header">
@@ -261,6 +272,18 @@ export const exportAsPDF = async (journals: Journal[]): Promise<string> => {
     } else {
       htmlContent += `<h2 class="entry-title untitled">Untitled Entry</h2>`;
     }
+
+     if (journal.mood) {
+    const moodOption = MOOD_OPTIONS.find(m => m.value === journal.mood);
+    if (moodOption) {
+      htmlContent += `
+        <div class="entry-mood">
+          <span class="mood-emoji">${moodOption.emoji}</span>
+          <span class="mood-label">Feeling ${moodOption.label}</span>
+        </div>
+      `;
+    }
+  }
 
     // Content with Markdown parsing
     try {
