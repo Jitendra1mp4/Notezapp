@@ -279,7 +279,7 @@ export const exportAsPDF = async (journals: Journal[]): Promise<string> => {
       htmlContent += `
         <div class="entry-mood">
           <span class="mood-emoji">${moodOption.emoji}</span>
-          <span class="mood-label">Feeling ${moodOption.label}</span>
+          <span class="mood-label">${moodOption.label}</span>
         </div>
       `;
     }
