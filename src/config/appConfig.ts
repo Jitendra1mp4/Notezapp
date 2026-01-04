@@ -37,7 +37,7 @@ export const APP_CONFIG = {
   IS_DEVELOPMENT,
 
   // Display name
-  displayName:  "🔏 Enchronofy", // APP_NAME,
+  displayName:  "Enchronofy", // APP_NAME,
 
   // Normalized versions for different use cases
   slug: APP_NAME_SLUG, // For expo slug
