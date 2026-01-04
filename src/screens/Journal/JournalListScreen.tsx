@@ -20,6 +20,7 @@ import {
 } from "react-native-paper";
 import { SafeAreaView } from "react-native-safe-area-context";
 
+import { MOOD_OPTIONS } from "@/src/components/journal/MoodSelector";
 import { generateExportFile, shareFile } from "@/src/services/exportService";
 import { getVaultStorageProvider } from "@/src/services/vaultStorageProvider";
 import { useAppDispatch, useAppSelector } from "@/src/stores/hooks";
@@ -48,7 +49,6 @@ const JournalListScreen: React.FC<{ navigation: any; route: any }> = ({
   const journals = useAppSelector((state) => state.journals.journals);
   const isGlobalLoading = useAppSelector((state) => state.journals.isLoading);
 
-
   // --- Local UI State ---
   const [searchQuery, setSearchQuery] = useState("");
   const [refreshing, setRefreshing] = useState(false);
@@ -57,8 +57,7 @@ const JournalListScreen: React.FC<{ navigation: any; route: any }> = ({
   const [isDeleting, setIsDeleting] = useState(false);
 
   const [exportModalVisible, setExportModalVisible] = useState(false);
- 
-  
+
   const filteredJournals = useMemo(() => {
     let result = [...journals];
 
@@ -128,7 +127,6 @@ const JournalListScreen: React.FC<{ navigation: any; route: any }> = ({
    * Encapsulates the logic for both standard and encrypted exports.
    */
   const onExport = async (exportFormat: ExportFormat, password?: string) => {
-  
     if (filteredJournals.length === 0) {
       Alert.alert("No Journals", "No entries found for this date.");
       setExportModalVisible(false);
@@ -139,13 +137,16 @@ const JournalListScreen: React.FC<{ navigation: any; route: any }> = ({
     setExportModalVisible(false);
 
     // 3. Process: Hand off to the heavy lifting function
-    await processExport(exportFormat,  password);
+    await processExport(exportFormat, password);
   };
 
   /**
    * Handles the actual generation and sharing of the file.
    */
-  const processExport = async (exportFormat: ExportFormat,password?: string) => {
+  const processExport = async (
+    exportFormat: ExportFormat,
+    password?: string,
+  ) => {
     if (!encryptionKey) {
       Alert.alert("Error", "Encryption key missing. Please login again.");
       return;
@@ -153,13 +154,10 @@ const JournalListScreen: React.FC<{ navigation: any; route: any }> = ({
 
     dispatch(setIsExportImportInProgress(true));
 
-    
     // ✅ YIELD TO UI: Allow the modal to visually close before the JS thread freezes for encryption
     await new Promise((resolve) => resolveImmediately(resolve));
 
     try {
-
-
       // Generate the file (JSON, PDF, Text, or Encrypted)
       const { uri, filename } = await generateExportFile(
         exportFormat,
@@ -176,10 +174,9 @@ const JournalListScreen: React.FC<{ navigation: any; route: any }> = ({
       Alert.alert("Export Failed", e.message || "An unknown error occurred.");
     } finally {
       dispatch(setIsExportImportInProgress(false));
-      
     }
   };
-  
+
   const handleDeleteJournal = async (journalId: string) => {
     Alert.alert(
       "Delete?",
@@ -256,6 +253,11 @@ const JournalListScreen: React.FC<{ navigation: any; route: any }> = ({
 
     const bannerBg = theme.dark ? "rgba(0,0,0,0.18)" : "rgba(255,255,255,0.55)";
 
+    // GET MOOD EMOJI - ADD THIS
+    const moodEmoji = item.mood
+      ? MOOD_OPTIONS.find((m) => m.value === item.mood)?.emoji
+      : null;
+
     return (
       <Card
         style={[styles.card, cardStyle]}
@@ -270,6 +272,7 @@ const JournalListScreen: React.FC<{ navigation: any; route: any }> = ({
           <View style={styles.cardRow}>
             {/* Left date banner */}
             <View style={[styles.dateBanner, { backgroundColor: bannerBg }]}>
+              {moodEmoji && <Text style={styles.bannerMood}>{moodEmoji}</Text>}
               <Text
                 style={[styles.bannerDay, { color: theme.colors.onSurface }]}
               >
@@ -459,9 +462,7 @@ const JournalListScreen: React.FC<{ navigation: any; route: any }> = ({
               icon="export-variant"
               mode="contained-tonal"
               onPress={() => handleOpenExport()}
-              disabled={
-                filteredJournals.length === 0 || isDeleting 
-              }
+              disabled={filteredJournals.length === 0 || isDeleting}
             />
           </View>
         </Card.Content>
@@ -665,6 +666,15 @@ const styles = StyleSheet.create({
   },
   emptyTitle: { marginBottom: 8, textAlign: "center" },
   emptyText: { opacity: 0.6, textAlign: "center", lineHeight: 22 },
+
+  moodEmojiSmall: {
+    fontSize: 14,
+    marginRight: 4,
+  },
+  bannerMood: {
+    fontSize: 20,
+    marginTop: 4,
+  },
 
   // FAB
   fab: {

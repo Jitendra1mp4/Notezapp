@@ -1,6 +1,8 @@
 // src/screens/Home/HomeScreen.tsx
+import { MOOD_OPTIONS } from "@/src/components/journal/MoodSelector";
 import { getVaultStorageProvider } from "@/src/services/vaultStorageProvider";
 import { Alert } from "@/src/utils/alert";
+import { getRandomPrompt } from "@/src/utils/journalPrompts";
 import { getCalendarTheme } from "@/src/utils/theme";
 import { useFocusEffect } from "@react-navigation/native";
 import { format, subDays } from "date-fns";
@@ -45,6 +47,8 @@ const HomeScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
   const longestStreak = useAppSelector((state) => state.journals.longestStreak);
   const journals = useAppSelector((state) => state.journals.journals);
 
+  const [todayPrompt, setTodayPrompt] = useState(getRandomPrompt());
+
   const [markedDates, setMarkedDates] = useState<any>({});
   const scaleAnim = React.useRef(new Animated.Value(1)).current;
 
@@ -86,7 +90,7 @@ const HomeScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
   };
 
   const updateMarkedDates = () => {
-    const marked = getMarkedDates(journals);
+    const marked = getMarkedDates(journals,theme.colors);
     setMarkedDates(marked);
   };
 
@@ -114,7 +118,11 @@ const HomeScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
 
   const handleCreateJournalForToday = () => {
     const today = format(new Date(), "yyyy-MM-dd");
-    navigation.navigate("JournalEditor", { selectedDate: today });
+    navigation.navigate("JournalEditor", {
+      selectedDate: today,
+      promptText: todayPrompt.text, // Pass the current prompt
+      promptId: todayPrompt.id, // Pass prompt ID for tracking
+    });
   };
 
   const calendarTheme = React.useMemo(
@@ -168,13 +176,6 @@ const HomeScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
                     : "Create your first entry and begin your streak."}
                 </Text>
               </View>
-
-              <IconButton
-                icon="pencil-outline"
-                mode="contained-tonal"
-                onPress={handleCreateJournalForToday}
-                disabled={!encryptionKey}
-              />
             </View>
 
             <View style={styles.statGrid}>
@@ -185,10 +186,18 @@ const HomeScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
                 ]}
                 onPress={() => navigation.navigate("JournalList")}
               >
-                <Text variant="displaySmall" style={styles.statValue}>
-                  {journals.length}
-                </Text>
-                <Text variant="labelMedium" style={[styles.statLabel, {paddingTop:10}]}>
+                <Animated.View style={{ transform: [{ scale: scaleAnim }] ,  flexDirection:'row'}}>
+                  <Text variant="displaySmall" style={styles.statValue}>
+                    {journals.length}
+                  </Text>
+                  <Text  style={styles.statEmojiValue}>
+                    📝
+                  </Text>
+                </Animated.View>
+                <Text
+                  variant="labelMedium"
+                  style={[styles.statLabel, { paddingTop: 10 }]}
+                >
                   Total entries
                 </Text>
               </Pressable>
@@ -199,24 +208,25 @@ const HomeScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
                   { backgroundColor: heroBg, borderColor: subtleBorder },
                 ]}
               >
-                <Animated.View style={{ transform: [{ scale: scaleAnim }] }}>
-                  <Text variant="displaySmall" style={styles.statValue}>
+                <Animated.View style={{ transform: [{ scale: scaleAnim }], flexDirection:'row' }}>
+                  <Text variant="displayMedium" style={styles.statValue}>
                     {currentStreak}
                   </Text>
+                  <Text style={styles.statEmojiValue}>
+                    🔥
+                  </Text>
                 </Animated.View>
-                <Text variant="labelMedium" style={styles.statLabel}>
-                  <View
-                    style={{
-                      flexDirection: "row",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      gap:1,
-                    }}
-                  >
-                    <IconButton icon="fire" size={25} style={{ margin: 0, marginBottom:5 }} />
-                    <Text variant="labelSmall">Current Streak</Text>
-                  </View>
-                </Text>
+                 
+                    {/* <IconButton
+                      icon="fire"
+                      size={25}
+                      style={{ margin: 0, marginBottom: 5 }}
+                    /> */}
+                    <Text
+                  variant="labelMedium"
+                  style={[styles.statLabel, { paddingTop: 10 }]}
+                > Current Streak</Text>
+                  {/* </View> */}
               </View>
             </View>
 
@@ -224,14 +234,19 @@ const HomeScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
               <Chip
                 icon="trophy"
                 compact
+                textStyle={{
+                  color: theme.colors.onSurface,
+                }}
                 style={[
                   styles.heroChip,
-                  { backgroundColor: theme.colors.elevation.level1 },
+                  {
+                    backgroundColor: theme.colors.elevation.level5,
+                  },
                 ]}
               >
                 {`Longest streak: ${longestStreak}`}
               </Chip>
-              {/* 
+              {/*               
               <Chip
                 icon="calendar-check-outline"
                 compact
@@ -243,6 +258,82 @@ const HomeScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
               >
                 View journals
               </Chip> */}
+            </View>
+          </Card.Content>
+        </Card>
+
+        <Card style={{ ...styles.card, borderColor: subtleBorder }}>
+          <Card.Content>
+            <View style={styles.promptPreviewContainer}>
+              {/* Header */}
+
+              {/* Prompt Text - Tappable */}
+              <Pressable
+                onPress={handleCreateJournalForToday}
+                style={{
+                  padding: 16,
+                  backgroundColor: heroBg,
+                  borderRadius: 12,
+                  borderColor: theme.colors.primary,
+                }}
+              >
+                <Text
+                  variant="titleMedium"
+                  style={{
+                    fontSize: 20,
+                    opacity: 0.8,
+                    color: theme.colors.onSurface,
+                    lineHeight: 24,
+                    fontWeight: "500",
+                  }}
+                >
+                  "{todayPrompt.text}"
+                </Text>
+              </Pressable>
+
+              {/* Actions */}
+              <View style={styles.promptActions}>
+                <View style={styles.promptHeader}>
+                  <IconButton
+                    icon="lightbulb-on-outline"
+                    size={15}
+                    iconColor={theme.colors.primary}
+                    style={{ margin: 0 }}
+                  />
+                  <Text
+                    variant="labelSmall"
+                    style={{
+                      fontWeight: "400",
+                      opacity: 0.7,
+                    }}
+                  >
+                    Today's Prompt
+                  </Text>
+                </View>
+                <Button
+                  mode="text"
+                  icon="shuffle-variant"
+                  onPress={() => setTodayPrompt(getRandomPrompt())}
+                  compact
+                >
+                  <Text
+                    style={{
+                      fontSize: 11,
+                      opacity: 0.9,
+                      fontStyle: "italic",
+                    }}
+                  >
+                    Shuffle{" "}
+                  </Text>
+                </Button>
+           
+                <Button
+                  icon="pencil-outline"
+                  onPress={handleCreateJournalForToday}
+                >
+                  Write it
+                </Button>
+              </View>
             </View>
           </Card.Content>
         </Card>
@@ -268,10 +359,22 @@ const HomeScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
                 const pillBg = active
                   ? theme.colors.primaryContainer
                   : theme.colors.elevation.level1;
-
                 const pillText = active
                   ? theme.colors.onPrimaryContainer
                   : theme.colors.onSurfaceVariant;
+
+                // GET MOOD FOR THIS DAY - ADD THIS
+                const dayJournals = journals.filter(
+                  (j) => format(new Date(j.date), "yyyy-MM-dd") === d.dateKey,
+                );
+                const dayMoods = dayJournals
+                  .map((j) => j.mood)
+                  .filter((m) => m)
+                  .map(
+                    (m) => MOOD_OPTIONS.find((opt) => opt.value === m)?.emoji,
+                  )
+                  .filter((e) => e);
+                const moodDisplay = dayMoods.length > 0 ? dayMoods[0] : null;
 
                 return (
                   <Pressable
@@ -289,11 +392,13 @@ const HomeScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
                     <Text style={[styles.dayPillTop, { color: pillText }]}>
                       {d.isToday ? "Today" : d.dateLabel}
                     </Text>
-
                     <Text style={[styles.dayPillMid, { color: pillText }]}>
-                      {active ? "✓" : "—"}
+                      {active ? "✓" : "·"}
                     </Text>
-
+                    {/* ADD MOOD DISPLAY */}
+                    {moodDisplay && (
+                      <Text style={styles.dayPillMood}>{moodDisplay}</Text>
+                    )}
                     <Text style={[styles.dayPillBottom, { color: pillText }]}>
                       {d.count} {d.count === 1 ? "entry" : "entries"}
                     </Text>
@@ -316,7 +421,7 @@ const HomeScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
               markedDates={markedDates}
               markingType="dot"
               onDayPress={handleDayPress}
-              maxDate={format(new Date(), "yyyy-MM-dd")}
+              // maxDate={format(new Date(), "yyyy-MM-dd")}
               disabledByDefault={false}
             />
           </Card.Content>
@@ -379,7 +484,10 @@ const HomeScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
 const styles = StyleSheet.create({
   container: { flex: 1 },
   content: { padding: 16 },
-
+  dayPillMood: {
+    fontSize: 18,
+    marginVertical: 2,
+  },
   card: {
     marginBottom: 16,
     borderRadius: 16,
@@ -426,6 +534,10 @@ const styles = StyleSheet.create({
     fontSize:35,
     fontWeight: "800",
     textAlign: "center", // add
+  },
+  statEmojiValue: {
+    // marginTop:6, 
+    fontSize:20, // add
   },
 
   heroChipsRow: {
@@ -499,6 +611,21 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
     marginBottom: 6, // little spacing
     textAlign: "center",
+  },
+
+  promptPreviewContainer: {
+    gap: 12,
+  },
+  promptHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+  },
+  promptActions: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    gap: 8,
   },
 });
 

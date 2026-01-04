@@ -350,7 +350,7 @@ const SettingsScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
 
           {/* Instant lock */}
           <View style={styles.settingRow}>
-            <View className="settingInfo" style={styles.settingInfo}>
+            <View style={styles.settingInfo}>
               <Text variant="titleMedium">Instant Lock</Text>
               <Text style={styles.settingDescription}>
                 Lock immediately when app goes to background

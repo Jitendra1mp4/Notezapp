@@ -1,5 +1,7 @@
+import { MoodSelector } from "@/src/components/journal/MoodSelector";
 import { getVaultStorageProvider } from "@/src/services/vaultStorageProvider";
 import { setIsImagePickingInProgress } from "@/src/stores/slices/settingsSlice";
+import { getRandomPrompt, JournalPrompt } from "@/src/utils/journalPrompts";
 import { getMarkdownStyles } from "@/src/utils/markdownStyles";
 import { useFocusEffect } from "@react-navigation/native";
 import * as ImagePicker from "expo-image-picker";
@@ -27,15 +29,12 @@ import {
 } from "react-native-paper";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { v4 as uuidv4 } from "uuid";
-import {
-  base64ToDataUri,
-  imageUriToBase64
-} from "../../services/imageService";
+import { base64ToDataUri, imageUriToBase64 } from "../../services/imageService";
 import { useAppDispatch, useAppSelector } from "../../stores/hooks";
 import { addJournal, updateJournal } from "../../stores/slices/journalsSlice";
 import { Journal } from "../../types";
 import { Alert } from "../../utils/alert";
-const VaultStorageProvider = getVaultStorageProvider()
+const VaultStorageProvider = getVaultStorageProvider();
 
 const JournalEditorScreen: React.FC<{ navigation: any; route: any }> = ({
   navigation,
@@ -49,6 +48,8 @@ const JournalEditorScreen: React.FC<{ navigation: any; route: any }> = ({
   const journalId = route.params?.journalId || null;
   const selectedDate = route.params?.selectedDate || null;
   const isAlreadyExist = !!journalId;
+  const promptFromHome = route.params?.promptText ?? null;
+  const promptIdFromHome = route.params?.promptId ?? null;
 
   const [title, setTitle] = useState("");
   const [text, setText] = useState("");
@@ -63,9 +64,17 @@ const JournalEditorScreen: React.FC<{ navigation: any; route: any }> = ({
   const [imageIds, setImageIds] = useState<string[]>([]);
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
 
+  // Inside the JournalEditorScreen component, add mood state after other states:
+  const [selectedMood, setSelectedMood] = useState<string>("");
+
   // New state for Markdown Preview toggle
   const [isPreviewMode, setIsPreviewMode] = useState(true);
   const [imageRatios, setImageRatios] = useState<Record<string, number>>({});
+
+  const [currentPrompt, setCurrentPrompt] = useState<JournalPrompt | null>(
+    null,
+  );
+  const [showPrompt, setShowPrompt] = useState(false);
 
   // Request camera permissions on mount
   useEffect(() => {
@@ -122,6 +131,30 @@ const JournalEditorScreen: React.FC<{ navigation: any; route: any }> = ({
     ]);
   };
 
+  // Initialize prompt for NEW entries only
+  useEffect(() => {
+    if (!journalId && !isAlreadyExist && title.length === 0) {
+      let prompt;
+
+      // Use prompt passed from home screen if available
+      if (promptFromHome && promptIdFromHome) {
+        prompt = {
+          id: promptIdFromHome,
+          text: promptFromHome,
+          category: "reflection" as const, // Default category
+        };
+      } else {
+        // Otherwise get a random prompt
+        prompt = getRandomPrompt();
+      }
+
+      setCurrentPrompt(prompt);
+      setShowPrompt(true);
+      // Pre-fill title with prompt text so user can edit it
+      setTitle(prompt.text);
+    }
+  }, [journalId, isAlreadyExist, promptFromHome, promptIdFromHome]);
+
   // This triggers by pressing back from any screen which I am not intended for.
   useFocusEffect(
     useCallback(() => {
@@ -157,17 +190,21 @@ const JournalEditorScreen: React.FC<{ navigation: any; route: any }> = ({
       await handleSave(false);
     };
     callSaveAsync();
-  }, [encryptionKey, text, title, imageBase64List]);
+  }, [encryptionKey, text, title, selectedMood, imageBase64List]);
 
   const loadJournal = async () => {
     if (!encryptionKey) return;
 
     setIsLoading(true);
     try {
-      const journal = await VaultStorageProvider.getJournal(generatedJournalId, encryptionKey);
+      const journal = await VaultStorageProvider.getJournal(
+        generatedJournalId,
+        encryptionKey,
+      );
       if (journal) {
         setTitle(journal.title || "");
         setText(journal.text);
+        setSelectedMood(journal.mood || ""); // ADD THIS LINE
         if (journal.images && journal.images.length > 0) {
           setImageBase64List(journal.images);
           setImageIds(journal.images.map(() => uuidv4()));
@@ -181,6 +218,14 @@ const JournalEditorScreen: React.FC<{ navigation: any; route: any }> = ({
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const handleShufflePrompt = () => {
+    const newPrompt = getRandomPrompt();
+    setCurrentPrompt(newPrompt);
+    setShowPrompt(true);
+    // Pre-fill title with new prompt
+    setTitle(newPrompt.text);
   };
 
   // Find the handleSave function and update it with future date validation
@@ -201,71 +246,74 @@ const JournalEditorScreen: React.FC<{ navigation: any; route: any }> = ({
 
     setIsSaving(true);
 
-  try {
-    const now = new Date().toISOString();
-    let existingJournal: Journal | null = null;
+    try {
+      const now = new Date().toISOString();
+      let existingJournal: Journal | null = null;
 
       if (generatedJournalId) {
-        existingJournal = await VaultStorageProvider.getJournal(generatedJournalId, encryptionKey);
-      }
-
-    let journalDate = now;
-    if (existingJournal?.date) {
-      journalDate = existingJournal.date;
-    } else if (selectedDate) {
-      const [year, month, day] = selectedDate.split("-").map(Number);
-      
-      // ✅ VALIDATION: Prevent future dates
-      const today = new Date();
-      today.setHours(0, 0, 0, 0); // Reset to start of day for accurate comparison
-      
-      const selectedDateObj = new Date(year, month - 1, day);
-      selectedDateObj.setHours(0, 0, 0, 0);
-      
-      if (selectedDateObj > today) {
-        Alert.alert(
-          "Future Date Not Allowed 📅",
-          "You can only create journal entries for today or past dates.\n\n" +
-          "🚀 Upcoming Feature:\n" +
-          "We're working on a 'Todo & Reminders' feature that will let you plan future notes!\n\n" +
-          "Stay tuned for updates! ✨",
-          [{ text: "Got it!", onPress: () => navigation.goBack() }]
+        existingJournal = await VaultStorageProvider.getJournal(
+          generatedJournalId,
+          encryptionKey,
         );
-        return false;
       }
 
-       const currentTime = new Date();
-      const dateObj = new Date(
-        year,
-        month - 1,
-        day,
-        currentTime.getHours(),      // Actual current hour
-        currentTime.getMinutes(),    // Actual current minute
-        currentTime.getSeconds(),    // Actual current second
-        currentTime.getMilliseconds() // Actual current millisecond
-      );
+      let journalDate = now;
+      if (existingJournal?.date) {
+        journalDate = existingJournal.date;
+      } else if (selectedDate) {
+        const [year, month, day] = selectedDate.split("-").map(Number);
+
+        // ✅ VALIDATION: Prevent future dates
+        const today = new Date();
+        today.setHours(0, 0, 0, 0); // Reset to start of day for accurate comparison
+
+        const selectedDateObj = new Date(year, month - 1, day);
+        selectedDateObj.setHours(0, 0, 0, 0);
+
+        if (selectedDateObj > today) {
+          Alert.alert(
+            "Future Date Not Allowed 📅",
+            "You can only create journal entries for today or past dates.\n\n" +
+              "🚀 Upcoming Feature:\n" +
+              "We're working on a 'Todo & Reminders' feature that will let you plan future notes!\n\n" +
+              "Stay tuned for updates! ✨",
+            [{ text: "Got it!", onPress: () => navigation.goBack() }],
+          );
+          return false;
+        }
+
+        const currentTime = new Date();
+        const dateObj = new Date(
+          year,
+          month - 1,
+          day,
+          currentTime.getHours(), // Actual current hour
+          currentTime.getMinutes(), // Actual current minute
+          currentTime.getSeconds(), // Actual current second
+          currentTime.getMilliseconds(), // Actual current millisecond
+        );
 
         journalDate = dateObj.toISOString();
       }
 
-    const journal: Journal = {
-      id: generatedJournalId || uuidv4(),
-      date: journalDate,
-      createdAt: existingJournal?.createdAt || now,
-      updatedAt: now,
-      title: title.trim() || undefined,
-      text: text.trim(),
-      mood: undefined,
-      images: imageBase64List.length > 0 ? imageBase64List : undefined,
-    };
+      const journal: Journal = {
+        id: generatedJournalId || uuidv4(),
+        date: journalDate,
+        createdAt: existingJournal?.createdAt || now,
+        updatedAt: now,
+        title: title.trim() || undefined,
+        text: text.trim(),
+        mood: selectedMood || undefined, // ADD THIS LINE
+        images: imageBase64List.length > 0 ? imageBase64List : undefined,
+      };
 
-    await VaultStorageProvider.saveJournal(journal, encryptionKey);
+      await VaultStorageProvider.saveJournal(journal, encryptionKey);
 
-    if (isJournalCreated) {
-      dispatch(updateJournal(journal));
-    } else {
-      dispatch(addJournal(journal));
-    }
+      if (isJournalCreated) {
+        dispatch(updateJournal(journal));
+      } else {
+        dispatch(addJournal(journal));
+      }
 
       setIsJournalCreated(true);
       setIsJournalModified(true);
@@ -324,7 +372,7 @@ const JournalEditorScreen: React.FC<{ navigation: any; route: any }> = ({
             {selectedDate ? (
               <Chip
                 icon="calendar-month-outline"
-                compact
+                compact={false}
                 style={styles.dateChip}
                 textStyle={styles.dateChipText}
               >
@@ -345,6 +393,18 @@ const JournalEditorScreen: React.FC<{ navigation: any; route: any }> = ({
                 />
               </View>
 
+
+            {/* Shuffle button - only show for new entries with prompt */}
+            {showPrompt && currentPrompt && !journalId && (
+              <IconButton
+                icon="shuffle-variant"
+                size={20}
+                onPress={handleShufflePrompt}
+                iconColor={theme.colors.primary}
+                style={styles.toggleContainer}
+                animated
+              />
+            )}
               {/* <Button
                 mode="contained"
                 icon="check"
@@ -360,41 +420,56 @@ const JournalEditorScreen: React.FC<{ navigation: any; route: any }> = ({
             </View>
           </View>
 
-          {/* Title - Modern "Ghost" Style */}
-          <TextInput
-            placeholder="Title"
-            value={title}
-            onChangeText={setTitle}
-            mode="flat"
-            underlineColor="transparent"
-            activeUnderlineColor="transparent"
-            style={[styles.titleInput, { color: theme.colors.onSurface }]}
-            cursorColor={theme.colors.primary}              // make caret pop
-            selectionColor={theme.colors.primary + '55'}    // semi‑transparent selection
-            placeholderTextColor={theme.colors.onSurfaceDisabled}
-            returnKeyType="next"
-            contentStyle={styles.titleContent}
-          />
-
+         
+          <View style={styles.titleRow}>
+            <TextInput
+              placeholder="Title (tap to edit)"
+              value={title}
+              onChangeText={(text) => {
+                setTitle(text);
+                // Hide prompt indicator once user modifies the text
+                if (
+                  showPrompt &&
+                  currentPrompt &&
+                  text !== currentPrompt.text
+                ) {
+                  // setShowPrompt(false);
+                }
+              }}
+              mode="flat"
+              underlineColor="transparent"
+              activeUnderlineColor="transparent"
+              multiline={true} // ✅ ADD THIS
+              // numberOfLines={3}                         // ✅ ADD THIS (shows up to 3 lines)
+              textAlignVertical="center" // ✅ ADD THIS (align text to top)
+              style={{
+                ...styles.titleInput,
+                color: theme.colors.onSurface,
+              }}
+              cursorColor={theme.colors.primary}
+              selectionColor={`${theme.colors.primary}55`}
+              placeholderTextColor={theme.colors.onSurfaceVariant}
+              returnKeyType="next"
+              contentStyle={styles.titleContent}
+            />
+          </View>
           {/* Editor Area - Distraction Free */}
           {/* Editor / Preview Area */}
           {isPreviewMode ? (
             <View style={styles.previewContainer}>
-              <Pressable onPress={()=>setIsPreviewMode(!isPreviewMode)}>
-              <Markdown style={markdownStyles}>
-                {text.trim()
-                  ? text
-                  : "### ✨ Quick Guide\n" +
-                    "Start writing in **Edit** mode using these formats:\n\n" +
-                    "• `Start with # for Big Header`\n" +
-                    "• `Start with ## for Medium Header`\n" +
-                    "• `Start with - for unordered List item`\n" +
-                    "• `Surround like **Bold Text** for bold text`\n" +
-                    "• `Surround like *Italic Text* for italic`\n"+
-                    "\nTap on eye icon to toggle between preview and edit mode\n"
-                    }
-              </Markdown>
-
+              <Pressable onPress={() => setIsPreviewMode(!isPreviewMode)}>
+                <Markdown style={markdownStyles}>
+                  {text.trim()
+                    ? text
+                    : "### ✨ Quick Guide\n" +
+                      "Start writing in **Edit** mode using these formats:\n\n" +
+                      "• `Start with # for Big Header`\n" +
+                      "• `Start with ## for Medium Header and so on...`\n" +
+                      "• `Start with - for unordered List item`\n" +
+                      "• `Surround like **Bold Text** for bold text`\n" +
+                      "• `Surround like *Italic Text* for italic`\n" +
+                      "\nTap on eye icon to toggle between preview and edit mode\n"}
+                </Markdown>
               </Pressable>
             </View>
           ) : (
@@ -409,12 +484,18 @@ const JournalEditorScreen: React.FC<{ navigation: any; route: any }> = ({
               style={[styles.bodyInput, { color: theme.colors.onSurface }]}
               placeholderTextColor={theme.colors.onSurfaceDisabled}
               contentStyle={styles.bodyContent}
-               cursorColor={theme.colors.primary}              // make caret pop
-              selectionColor={theme.colors.primary + '55'}    // semi‑transparent selection
+              cursorColor={theme.colors.primary} // make caret pop
+              selectionColor={theme.colors.primary + "55"} // semi‑transparent selection
               textAlignVertical="top"
               autoFocus={!title}
             />
           )}
+
+          <MoodSelector
+            selectedMood={selectedMood}
+            onSelectMood={setSelectedMood}
+            label="How are you feeling?"
+          />
 
           {/* Attachments Section */}
           {(imageBase64List.length > 0 || isCompressingImage) && (
@@ -558,9 +639,23 @@ const styles = StyleSheet.create({
   },
   content: {
     paddingHorizontal: 20,
-    paddingTop: 16,
+    paddingTop: 10,
     paddingBottom: 80,
     flexGrow: 1,
+  },
+
+  titleRow: {
+    flexDirection: "row",
+    alignItems: "flex-start", 
+    justifyContent: "space-between",
+    gap: 8,
+    paddingBottom:0,
+  },
+
+  promptIndicator: {
+    marginBottom: 12,
+    marginTop: -4,
+    paddingHorizontal: 4,
   },
 
   // Header
@@ -568,9 +663,10 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    marginBottom: 12,
+     marginBottom: 5,
   },
   headerRight: {
+    padding:0,height:0,
     flexDirection: "row",
     alignItems: "center",
   },
@@ -582,10 +678,9 @@ const styles = StyleSheet.create({
   },
   dateChipText: {
     fontSize: 12,
-    marginVertical: -2, // Tighten vertical centering on some platforms
   },
   toggleContainer: {
-    marginRight: 8,
+    // marginRight: 8,
   },
   saveButton: {
     borderRadius: 20,
@@ -600,16 +695,17 @@ const styles = StyleSheet.create({
 
   // Inputs
   titleInput: {
+    flex: 1,
     backgroundColor: "transparent",
     paddingHorizontal: 0,
-    marginBottom: 8,
-    // Negative margin to align text with left edge (Paper adds internal padding)
+    paddingVertical:0,
     marginLeft: -4,
   },
   titleContent: {
-    fontSize: 26,
+    fontSize: 22,
     fontWeight: "800",
-    lineHeight: 32,
+    lineHeight: 26,
+    flexWrap: "wrap",
   },
   bodyInput: {
     backgroundColor: "transparent",

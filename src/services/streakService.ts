@@ -1,5 +1,6 @@
-import { Journal } from '../types';
-import { differenceInDays, startOfDay, parseISO } from 'date-fns';
+import { differenceInDays, parseISO, startOfDay } from "date-fns";
+import { MD3Colors } from "react-native-paper/lib/typescript/types";
+import { Journal } from "../types";
 
 /**
  * Calculate the current streak of consecutive days with journal entries
@@ -9,32 +10,32 @@ export const calculateCurrentStreak = (journals: Journal[]): number => {
 
   // Sort journals by date (newest first)
   const sortedJournals = [...journals].sort(
-    (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
+    (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime(),
   );
 
   // Get unique dates (in case multiple entries on same day)
   const uniqueDates = Array.from(
     new Set(
-      sortedJournals.map(j => {
+      sortedJournals.map((j) => {
         const dateStr = startOfDay(parseISO(j.date)).toISOString();
-        console.log('Journal date:', j.date, '-> Start of day:', dateStr);
+        console.log("Journal date:", j.date, "-> Start of day:", dateStr);
         return dateStr;
-      })
-    )
-  ).map(dateStr => parseISO(dateStr));
+      }),
+    ),
+  ).map((dateStr) => parseISO(dateStr));
 
-  console.log('Unique dates count:', uniqueDates.length);
+  console.log("Unique dates count:", uniqueDates.length);
 
   const today = startOfDay(new Date());
   const mostRecentEntry = startOfDay(parseISO(sortedJournals[0].date));
 
   // Check if the most recent entry is today or yesterday
   const daysDiff = differenceInDays(today, mostRecentEntry);
-  console.log('Days difference from today:', daysDiff);
+  console.log("Days difference from today:", daysDiff);
 
   if (daysDiff > 1) {
     // Streak is broken
-    console.log('Streak broken - more than 1 day gap');
+    console.log("Streak broken - more than 1 day gap");
     return 0;
   }
 
@@ -54,7 +55,7 @@ export const calculateCurrentStreak = (journals: Journal[]): number => {
     }
   }
 
-  console.log('Final current streak:', streak);
+  console.log("Final current streak:", streak);
   return streak;
 };
 
@@ -66,15 +67,15 @@ export const calculateLongestStreak = (journals: Journal[]): number => {
 
   // Sort journals by date (oldest first for longest streak calculation)
   const sortedJournals = [...journals].sort(
-    (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()
+    (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime(),
   );
 
   // Get unique dates
   const uniqueDates = Array.from(
     new Set(
-      sortedJournals.map(j => startOfDay(parseISO(j.date)).toISOString())
-    )
-  ).map(dateStr => parseISO(dateStr));
+      sortedJournals.map((j) => startOfDay(parseISO(j.date)).toISOString()),
+    ),
+  ).map((dateStr) => parseISO(dateStr));
 
   if (uniqueDates.length === 0) return 0;
   if (uniqueDates.length === 1) return 1;
@@ -98,7 +99,7 @@ export const calculateLongestStreak = (journals: Journal[]): number => {
     }
   }
 
-  console.log('Longest streak ever:', longestStreak);
+  console.log("Longest streak ever:", longestStreak);
   return longestStreak;
 };
 
@@ -106,29 +107,30 @@ export const calculateLongestStreak = (journals: Journal[]): number => {
  * Get dates with journal entries for calendar marking
  */
 export const getMarkedDates = (
-  journals: Journal[]
+  journals: Journal[],
+  colors: MD3Colors,
 ): { [key: string]: { marked: boolean; dotColor: string } } => {
   const marked: { [key: string]: { marked: boolean; dotColor: string } } = {};
 
-  journals.forEach(journal => {
+  journals.forEach((journal) => {
     try {
       // Use local date to avoid timezone offset issues
       const date = new Date(journal.date);
       const year = date.getFullYear();
-      const month = String(date.getMonth() + 1).padStart(2, '0');
-      const day = String(date.getDate()).padStart(2, '0');
+      const month = String(date.getMonth() + 1).padStart(2, "0");
+      const day = String(date.getDate()).padStart(2, "0");
       const dateKey = `${year}-${month}-${day}`;
-      
+
       marked[dateKey] = {
         marked: true,
-        dotColor: '#6200EE',
+        dotColor: colors.inversePrimary,
       };
-      console.log('Marked date:', dateKey, 'from journal date:', journal.date);
+      console.log("Marked date:", dateKey, "from journal date:", journal.date);
     } catch (error) {
-      console.error('Error parsing journal date:', journal.date, error);
+      console.error("Error parsing journal date:", journal.date, error);
     }
   });
 
-  console.log('Total marked dates:', Object.keys(marked).length);
+  console.log("Total marked dates:", Object.keys(marked).length);
   return marked;
 };

@@ -138,12 +138,12 @@ const ExportScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
               entries or filter by date range.
             </Text>
             <Button
-            mode="outlined"
+            mode="contained-tonal"
             onPress={() => navigation.navigate('Import')}
-            style={{marginTop:20}}
+            style={[{marginTop:20,paddingVertical:4},styles.mainButton]}
             icon="database-import"
           >
-            Import from JSON
+            Import from Encrypted Backup/Json
           </Button>
           </Card.Content>
         </Card>

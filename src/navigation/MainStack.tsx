@@ -30,7 +30,7 @@ export const MainStack: React.FC = () => {
   // We define a helper function that takes 'navigation' as an argument
   const getHeaderOptions = (navigation: any, title: string) => ({
     title,
-    headerStyle: { backgroundColor: theme.colors.surface },
+    headerStyle: { backgroundColor: theme.colors.surface , borderBottomWidth:0, },
     headerTintColor: theme.colors.onSurface,
     headerRight: () => (
       <View style={{ display: "flex", flexDirection: "row" }}>

@@ -37,7 +37,7 @@ export const APP_CONFIG = {
   IS_DEVELOPMENT,
 
   // Display name
-  displayName:  "🔏 Enchronofy", // APP_NAME,
+  displayName:  "Enchronofy", // APP_NAME,
 
   // Normalized versions for different use cases
   slug: APP_NAME_SLUG, // For expo slug
@@ -48,7 +48,8 @@ export const APP_CONFIG = {
   // we want to make db name independent of app name
   SQLITE_VAULT_DB_NAME: `pro.corelogik.journal_app.db`, 
 
-  
+  APP_TAGLINE:`Your Vault for Feelings, thoughts, Emotions and Memories`,
+
   // Storage key prefix - used for AsyncStorage and other storage mechanisms
   STORAGE_KEY_PREFIX, // e.g., "@d_journal_hub"
 

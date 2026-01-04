@@ -8,6 +8,7 @@ import {
   Dimensions,
   Image,
   Modal,
+  Pressable,
   ScrollView,
   StatusBar,
   StyleSheet,
@@ -27,6 +28,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 
 import { base64ToDataUri } from "@/src/services/imageService";
 
+import { MOOD_OPTIONS } from "@/src/components/journal/MoodSelector";
 import { getVaultStorageProvider } from "@/src/services/vaultStorageProvider";
 import { useAppDispatch, useAppSelector } from "@/src/stores/hooks";
 import { deleteJournal as deleteJournalAction } from "@/src/stores/slices/journalsSlice";
@@ -35,8 +37,7 @@ import { Alert } from "@/src/utils/alert";
 
 const { width: screenWidth } = Dimensions.get("window");
 
-const VaultStorageProvider = getVaultStorageProvider()
-
+const VaultStorageProvider = getVaultStorageProvider();
 
 const JournalDetailScreen: React.FC<{ navigation: any; route: any }> = ({
   navigation,
@@ -60,7 +61,10 @@ const JournalDetailScreen: React.FC<{ navigation: any; route: any }> = ({
         if (!encryptionKey) return;
         setIsLoading(true);
         try {
-          const loadedJournal = await VaultStorageProvider.getJournal(journalId, encryptionKey);
+          const loadedJournal = await VaultStorageProvider.getJournal(
+            journalId,
+            encryptionKey,
+          );
           setJournal(loadedJournal);
         } catch (error) {
           console.error("❌ Error loading journal detail:", error);
@@ -126,7 +130,10 @@ const JournalDetailScreen: React.FC<{ navigation: any; route: any }> = ({
             if (!encryptionKey) return;
             setIsDeleting(true);
             try {
-              await VaultStorageProvider.deleteJournal(journalId,encryptionKey);
+              await VaultStorageProvider.deleteJournal(
+                journalId,
+                encryptionKey,
+              );
               dispatch(deleteJournalAction(journalId));
               navigation.goBack();
             } catch (error) {
@@ -168,7 +175,7 @@ const JournalDetailScreen: React.FC<{ navigation: any; route: any }> = ({
   return (
     <SafeAreaView
       style={[styles.container, { backgroundColor }]}
-      edges={["left", "right","bottom"]}
+      edges={["left", "right", "bottom"]}
     >
       <StatusBar barStyle={theme.dark ? "light-content" : "dark-content"} />
 
@@ -176,124 +183,151 @@ const JournalDetailScreen: React.FC<{ navigation: any; route: any }> = ({
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
-        {/* Header Section */}
-        <View style={styles.header}>
-          <View style={styles.metaRow}>
-            <View style={styles.metaItem}>
-              <IconButton
-                icon="calendar-month-outline"
-                size={18}
-                iconColor={theme.colors.onSurfaceVariant}
-                style={styles.metaIcon}
-              />
-              <Text
-                style={[
-                  styles.metaText,
-                  { color: theme.colors.onSurfaceVariant },
-                ]}
-              >
-                {formattedDate}
-              </Text>
-            </View>
-            <View style={styles.metaItem}>
-              <IconButton
-                icon="clock-time-four-outline"
-                size={18}
-                iconColor={theme.colors.onSurfaceVariant}
-                style={styles.metaIcon}
-              />
-              <Text
-                style={[
-                  styles.metaText,
-                  { color: theme.colors.onSurfaceVariant },
-                ]}
-              >
-                {formattedTime}
-              </Text>
-            </View>
-          </View>
-
-          {hasTitle ? (
-            <Text
-              style={[styles.title, { color: contentColor }]}
-              variant="displaySmall"
-            >
-              {journal.title}
-            </Text>
-          ) : (
-            <Text
-              style={[
-                styles.title,
-                styles.untitled,
-                { color: theme.colors.onSurfaceVariant },
-              ]}
-              variant="displaySmall"
-            >
-              Untitled Entry
-            </Text>
-          )}
-        </View>
-
-        {/* Image Gallery (Grid Layout) */}
-
-        {journal.images?.length ? (
-          <View style={styles.galleryGrid}>
-            {journal.images.map((base64, index) => {
-              const imageUri = base64ToDataUri(base64);
-              const ratio = imageRatios[imageUri] ?? 4 / 3;
-
-              const wrapperStyle = isSingleImage
-                ? [styles.singleImageWrapper, { aspectRatio: ratio }]
-                : styles.thumbWrapper;
-
-              return (
-                <TouchableOpacity
-                  key={index}
-                  style={wrapperStyle}
-                  onPress={() => setSelectedImage(imageUri)}
-                  activeOpacity={0.9}
+        <Pressable
+          onPress={() =>
+            navigation.navigate("JournalEditor", { journalId: journal.id })
+          }
+        >
+          {/* Header Section */}
+          <View style={styles.header}>
+            <View style={styles.metaRow}>
+              <View style={styles.metaItem}>
+                <IconButton
+                  icon="calendar-month-outline"
+                  size={15}
+                  iconColor={theme.colors.onSurfaceVariant}
+                  style={styles.metaIcon}
+                />
+                <Text
+                  style={[
+                    styles.metaText,
+                    { color: theme.colors.onSurfaceVariant },
+                  ]}
                 >
-                  <Image
-                    source={{ uri: imageUri }}
-                    style={styles.imageFill}
-                    resizeMode={isSingleImage ? "contain" : "cover"}
-                  />
-                </TouchableOpacity>
-              );
-            })}
+                  {formattedDate}
+                </Text>
+              </View>
+              <View style={styles.metaItem}>
+                <IconButton
+                  icon="clock-time-four-outline"
+                  size={15}
+                  iconColor={theme.colors.onSurfaceVariant}
+                  style={styles.metaIcon}
+                />
+                <Text
+                  style={[
+                    styles.metaText,
+                    { color: theme.colors.onSurfaceVariant },
+                  ]}
+                >
+                  {formattedTime}
+                </Text>
+              </View>
+            </View>
+
+            {journal.mood && (
+              <View
+                style={[
+                  styles.moodBadge,
+                  { backgroundColor: theme.colors.secondaryContainer },
+                ]}
+              >
+                <Text style={styles.moodBadgeEmoji}>
+                  {MOOD_OPTIONS.find((m) => m.value === journal.mood)?.emoji}
+                </Text>
+                <Text
+                  variant="labelLarge"
+                  style={[
+                    styles.moodBadgeText,
+                    { color: theme.colors.onSecondaryContainer },
+                  ]}
+                >{MOOD_OPTIONS.find((m) => m.value === journal.mood)?.label}
+                </Text>
+              </View>
+            )}
+
+            {hasTitle ? (
+              <Text
+                style={[styles.title, { color: contentColor }]}
+                variant="displaySmall"
+              >
+                {journal.title}
+              </Text>
+            ) : (
+              <Text
+                style={[
+                  styles.title,
+                  styles.untitled,
+                  { color: theme.colors.onSurfaceVariant },
+                ]}
+                variant="displaySmall"
+              >
+                Untitled Entry
+              </Text>
+            )}
           </View>
-        ) : null}
 
-        {/* Content Body */}
-        <View style={styles.body}>
-          <Markdown
-            style={{
-              ...markdownStyles,
-              body: {
-                ...markdownStyles.body,
-                fontSize: 16,
-                lineHeight: 26,
-                color: contentColor,
-              },
-              paragraph: { marginBottom: 16 },
-              heading1: {
-                ...markdownStyles.heading1,
-                color: contentColor,
-                marginTop: 24,
-              },
-              heading2: {
-                ...markdownStyles.heading2,
-                color: contentColor,
-                marginTop: 20,
-              },
-            }}
-          >
-            {journal.text}
-          </Markdown>
-        </View>
+          {/* Image Gallery (Grid Layout) */}
 
-        {/* Bottom spacer for the floating bar */}
-        <View style={{ height: 100 }} />
+          {journal.images?.length ? (
+            <View style={styles.galleryGrid}>
+              {journal.images.map((base64, index) => {
+                const imageUri = base64ToDataUri(base64);
+                const ratio = imageRatios[imageUri] ?? 4 / 3;
+
+                const wrapperStyle = isSingleImage
+                  ? [styles.singleImageWrapper, { aspectRatio: ratio }]
+                  : styles.thumbWrapper;
+
+                return (
+                  <TouchableOpacity
+                    key={index}
+                    style={wrapperStyle}
+                    onPress={() => setSelectedImage(imageUri)}
+                    activeOpacity={0.9}
+                  >
+                    <Image
+                      source={{ uri: imageUri }}
+                      style={styles.imageFill}
+                      resizeMode={isSingleImage ? "contain" : "cover"}
+                    />
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
+          ) : null}
+
+          {/* Content Body */}
+          <View style={styles.body}>
+            <Markdown
+              style={{
+                ...markdownStyles,
+                body: {
+                  ...markdownStyles.body,
+                  fontSize: 16,
+                  lineHeight: 26,
+                  color: contentColor,
+                },
+                paragraph: { marginBottom: 16 },
+                heading1: {
+                  ...markdownStyles.heading1,
+                  color: contentColor,
+                  marginTop: 24,
+                },
+                heading2: {
+                  ...markdownStyles.heading2,
+                  color: contentColor,
+                  marginTop: 20,
+                },
+              }}
+            >
+              {journal.text}
+            </Markdown>
+          </View>
+
+          {/* Bottom spacer for the floating bar */}
+          <View style={{ height: 100 }} />
+        </Pressable>
       </ScrollView>
 
       {/* Floating Bottom Action Bar */}
@@ -368,7 +402,7 @@ const styles = StyleSheet.create({
   scrollContent: {
     paddingHorizontal: 20,
     paddingTop: 20,
-    paddingBottom:80
+    paddingBottom: 80,
   },
   header: {
     marginBottom: 24,
@@ -386,7 +420,7 @@ const styles = StyleSheet.create({
   },
   metaIcon: {
     margin: 0,
-    marginRight: -4,
+    marginRight: 4,
   },
   metaText: {
     fontSize: 13,
@@ -405,6 +439,27 @@ const styles = StyleSheet.create({
   },
   body: {
     minHeight: 200,
+  },
+  moodBadge: {
+    flex:1,
+    flexDirection: "row",
+    alignItems: "center",
+    paddingVertical: 6,
+    paddingHorizontal: 10,
+    borderRadius: 10,
+    marginTop: 12,
+    marginBottom: 8,
+    alignSelf: "flex-start",
+  },
+  moodBadgeEmoji: {
+    fontSize: 15,
+    marginRight:2,
+    marginBottom:2
+  },
+  moodBadgeText: {
+    fontSize: 12,
+    fontStyle:'italic',
+    fontWeight: 300,
   },
 
   // Image Grid
@@ -454,7 +509,6 @@ const styles = StyleSheet.create({
     resizeMode: "cover",
   },
 
-
   modalImageFrame: {
     width: "100%",
     height: undefined,
@@ -492,7 +546,7 @@ const styles = StyleSheet.create({
     right: 0,
     bottom: 0,
   },
-    fullImage: {
+  fullImage: {
     width: "100%", // was screenWidth
     height: undefined, // was 80
   },
