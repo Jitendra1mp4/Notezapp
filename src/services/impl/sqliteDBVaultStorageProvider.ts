@@ -13,7 +13,7 @@ import { EncryptedNote } from "../../types/crypto";
 import { CryptoServiceProvider, getCryptoProvider } from "../cryptoServiceProvider";
 import { VaultStorageProvider } from "../vaultStorageProvider";
 
-class SQLiteStorageProvider implements VaultStorageProvider {
+class SQLiteDBVaultStorageProvider implements VaultStorageProvider {
 
   static db: SQLite.SQLiteDatabase | null = null;
 
@@ -22,18 +22,18 @@ class SQLiteStorageProvider implements VaultStorageProvider {
    CryptoManager:CryptoServiceProvider ;
 
 
-  static obj: SQLiteStorageProvider | null = null;
+  static obj: SQLiteDBVaultStorageProvider | null = null;
 
   private constructor() {
     this.CryptoManager = getCryptoProvider();
   }
 
   // Singleton object
-  static getObject(): SQLiteStorageProvider {
-    if (SQLiteStorageProvider.obj == null) {
-      SQLiteStorageProvider.obj = new SQLiteStorageProvider();
+  static getObject(): SQLiteDBVaultStorageProvider {
+    if (SQLiteDBVaultStorageProvider.obj == null) {
+      SQLiteDBVaultStorageProvider.obj = new SQLiteDBVaultStorageProvider();
     }
-    return SQLiteStorageProvider.obj;
+    return SQLiteDBVaultStorageProvider.obj;
   }
 
 
@@ -43,10 +43,10 @@ class SQLiteStorageProvider implements VaultStorageProvider {
   initializeStorage = async () => {
     try {
       // Open the database (creates if doesn't exist)
-      SQLiteStorageProvider.db = await SQLite.openDatabaseAsync(APP_CONFIG.SQLITE_VAULT_DB_NAME);
+      SQLiteDBVaultStorageProvider.db = await SQLite.openDatabaseAsync(APP_CONFIG.SQLITE_VAULT_DB_NAME);
 
       // Create key-value store table
-      await SQLiteStorageProvider.db.execAsync(`
+      await SQLiteDBVaultStorageProvider.db.execAsync(`
       CREATE TABLE IF NOT EXISTS key_value_store (
         key TEXT PRIMARY KEY,
         value TEXT
@@ -55,7 +55,7 @@ class SQLiteStorageProvider implements VaultStorageProvider {
 
       // Create journals table with per-note encryption
       // Each row is one encrypted note with its own IV
-      await SQLiteStorageProvider.db.execAsync(`
+      await SQLiteDBVaultStorageProvider.db.execAsync(`
           CREATE TABLE IF NOT EXISTS journals (
             id TEXT PRIMARY KEY,
             date TEXT,
@@ -79,8 +79,8 @@ class SQLiteStorageProvider implements VaultStorageProvider {
 
   DestroyAndReInitializeDatabase = async () => {
     try {
-      if (SQLiteStorageProvider.db != null) {
-        await SQLiteStorageProvider.db.closeAsync();
+      if (SQLiteDBVaultStorageProvider.db != null) {
+        await SQLiteDBVaultStorageProvider.db.closeAsync();
         await SQLite.deleteDatabaseAsync(APP_CONFIG.SQLITE_VAULT_DB_NAME);
         console.log("Database Destroyed successfully");
         // Initialize a new database;
@@ -99,8 +99,8 @@ class SQLiteStorageProvider implements VaultStorageProvider {
 
   setValue = async (key: string, value: string) => {
     try {
-      if (!SQLiteStorageProvider.db) throw new Error("Database not initialized");
-      await SQLiteStorageProvider.db.runAsync(
+      if (!SQLiteDBVaultStorageProvider.db) throw new Error("Database not initialized");
+      await SQLiteDBVaultStorageProvider.db.runAsync(
         "INSERT OR REPLACE INTO key_value_store (key, value) VALUES (?, ?)",
         [key, value],
       );
@@ -112,8 +112,8 @@ class SQLiteStorageProvider implements VaultStorageProvider {
 
   getValue = async (key: string): Promise<string | null> => {
     try {
-      if (!SQLiteStorageProvider.db) throw new Error("Database not initialized");
-      const result = await SQLiteStorageProvider.db.getFirstAsync<{ value: string }>(
+      if (!SQLiteDBVaultStorageProvider.db) throw new Error("Database not initialized");
+      const result = await SQLiteDBVaultStorageProvider.db.getFirstAsync<{ value: string }>(
         "SELECT value FROM key_value_store WHERE key = ?",
         [key],
       );
@@ -126,8 +126,8 @@ class SQLiteStorageProvider implements VaultStorageProvider {
 
   deleteValue = async (key: string) => {
     try {
-      if (!SQLiteStorageProvider.db) throw new Error("Database not initialized");
-      await SQLiteStorageProvider.db.runAsync("DELETE FROM key_value_store WHERE key = ?", [
+      if (!SQLiteDBVaultStorageProvider.db) throw new Error("Database not initialized");
+      await SQLiteDBVaultStorageProvider.db.runAsync("DELETE FROM key_value_store WHERE key = ?", [
         key,
       ]);
     } catch (error) {
@@ -143,7 +143,7 @@ class SQLiteStorageProvider implements VaultStorageProvider {
 
   isFirstLaunch = async (): Promise<boolean> => {
     try {
-      const value = await this.getValue(SQLiteStorageProvider.KEYS.FIRST_LAUNCH);
+      const value = await this.getValue(SQLiteDBVaultStorageProvider.KEYS.FIRST_LAUNCH);
       return value === null;
     } catch (error) {
       console.error("Error checking first launch:", error);
@@ -153,7 +153,7 @@ class SQLiteStorageProvider implements VaultStorageProvider {
 
   markAsLaunched = async (): Promise<void> => {
     try {
-      await this.setValue(SQLiteStorageProvider.KEYS.FIRST_LAUNCH, "true");
+      await this.setValue(SQLiteDBVaultStorageProvider.KEYS.FIRST_LAUNCH, "true");
     } catch (error) {
       console.error("Error marking as launched:", error);
     }
@@ -163,7 +163,7 @@ class SQLiteStorageProvider implements VaultStorageProvider {
 
   saveVault = async (vault: Record<string, any>): Promise<void> => {
     try {
-      await this.setValue(SQLiteStorageProvider.KEYS.VAULT, JSON.stringify(vault));
+      await this.setValue(SQLiteDBVaultStorageProvider.KEYS.VAULT, JSON.stringify(vault));
     } catch (error) {
       console.error("Error saving vault:", error);
       throw new Error("Failed to save vault");
@@ -172,7 +172,7 @@ class SQLiteStorageProvider implements VaultStorageProvider {
 
   getVault = async (): Promise<Record<string, any> | null> => {
     try {
-      const vaultStr = await this.getValue(SQLiteStorageProvider.KEYS.VAULT);
+      const vaultStr = await this.getValue(SQLiteDBVaultStorageProvider.KEYS.VAULT);
       if (!vaultStr) return null;
       return JSON.parse(vaultStr);
     } catch (error) {
@@ -183,7 +183,7 @@ class SQLiteStorageProvider implements VaultStorageProvider {
 
   saveRecoveryKeyHash = async (recoveryKey: string): Promise<void> => {
     try {
-      await this.setValue(SQLiteStorageProvider.KEYS.RECOVERY_KEY_DISPLAY, recoveryKey);
+      await this.setValue(SQLiteDBVaultStorageProvider.KEYS.RECOVERY_KEY_DISPLAY, recoveryKey);
     } catch (error) {
       console.error("Error saving recovery key:", error);
       throw new Error("Failed to save recovery key");
@@ -192,7 +192,7 @@ class SQLiteStorageProvider implements VaultStorageProvider {
 
   getRecoveryKeyHash = async (): Promise<string | null> => {
     try {
-      return await this.getValue(SQLiteStorageProvider.KEYS.RECOVERY_KEY_DISPLAY);
+      return await this.getValue(SQLiteDBVaultStorageProvider.KEYS.RECOVERY_KEY_DISPLAY);
     } catch (error) {
       console.error("Error retrieving recovery key hash:", error);
       return null;
@@ -201,7 +201,7 @@ class SQLiteStorageProvider implements VaultStorageProvider {
 
   clearRecoveryKeyDisplay = async (): Promise<void> => {
     try {
-      await this.deleteValue(SQLiteStorageProvider.KEYS.RECOVERY_KEY_DISPLAY);
+      await this.deleteValue(SQLiteDBVaultStorageProvider.KEYS.RECOVERY_KEY_DISPLAY);
     } catch (error) {
       console.error("Error clearing recovery key display:", error);
     }
@@ -217,7 +217,7 @@ class SQLiteStorageProvider implements VaultStorageProvider {
    */
   saveJournal = async (journal: Journal, dk: string): Promise<void> => {
     try {
-      if (!SQLiteStorageProvider.db) throw new Error("Database not initialized");
+      if (!SQLiteDBVaultStorageProvider.db) throw new Error("Database not initialized");
 
       // Encrypt the note using CryptoManager
       const encryptedNote = await this.CryptoManager.encryptNote(dk, journal.text, {
@@ -230,7 +230,7 @@ class SQLiteStorageProvider implements VaultStorageProvider {
       });
 
       // Save encrypted note to database
-      await SQLiteStorageProvider.db.runAsync(
+      await SQLiteDBVaultStorageProvider.db.runAsync(
         `INSERT OR REPLACE INTO journals 
        (id, date, iv, content, title, mood, tags_encrypted, images, created_at, updated_at) 
        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
@@ -262,9 +262,9 @@ class SQLiteStorageProvider implements VaultStorageProvider {
    */
   getJournal = async (id: string, dk: string): Promise<Journal | null> => {
     try {
-      if (!SQLiteStorageProvider.db) throw new Error("Database not initialized");
+      if (!SQLiteDBVaultStorageProvider.db) throw new Error("Database not initialized");
 
-      const row = await SQLiteStorageProvider.db.getFirstAsync<{
+      const row = await SQLiteDBVaultStorageProvider.db.getFirstAsync<{
         id: string;
         date: string;
         iv: string;
@@ -332,9 +332,9 @@ class SQLiteStorageProvider implements VaultStorageProvider {
    */
   listJournals = async (dk: string): Promise<Journal[]> => {
     try {
-      if (!SQLiteStorageProvider.db) throw new Error("Database not initialized");
+      if (!SQLiteDBVaultStorageProvider.db) throw new Error("Database not initialized");
 
-      const rows = await SQLiteStorageProvider.db.getAllAsync<{
+      const rows = await SQLiteDBVaultStorageProvider.db.getAllAsync<{
         id: string;
         date: string;
         iv: string;
@@ -408,9 +408,9 @@ class SQLiteStorageProvider implements VaultStorageProvider {
    */
   deleteJournal = async (id: string): Promise<void> => {
     try {
-      if (!SQLiteStorageProvider.db) throw new Error("Database not initialized");
+      if (!SQLiteDBVaultStorageProvider.db) throw new Error("Database not initialized");
 
-      await SQLiteStorageProvider.db.runAsync("DELETE FROM journals WHERE id = ?", [id]);
+      await SQLiteDBVaultStorageProvider.db.runAsync("DELETE FROM journals WHERE id = ?", [id]);
     } catch (error) {
       console.error("Error deleting journal:", error);
       throw new Error("Failed to delete journal");
@@ -429,7 +429,7 @@ class SQLiteStorageProvider implements VaultStorageProvider {
     newDk: string,
   ): Promise<void> => {
     try {
-      if (!SQLiteStorageProvider.db) throw new Error("Database not initialized");
+      if (!SQLiteDBVaultStorageProvider.db) throw new Error("Database not initialized");
 
       // Get all encrypted journals
       const journals = await this.listJournals(oldDk);
@@ -444,7 +444,7 @@ class SQLiteStorageProvider implements VaultStorageProvider {
           images: journal.images,
         });
 
-        await SQLiteStorageProvider.db.runAsync(
+        await SQLiteDBVaultStorageProvider.db.runAsync(
           `UPDATE journals 
          SET iv = ?, content = ?, updated_at = ? 
          WHERE id = ?`,
@@ -469,9 +469,9 @@ class SQLiteStorageProvider implements VaultStorageProvider {
    */
   getJournalCount = async (): Promise<number> => {
     try {
-      if (!SQLiteStorageProvider.db) throw new Error("Database not initialized");
+      if (!SQLiteDBVaultStorageProvider.db) throw new Error("Database not initialized");
 
-      const result = await SQLiteStorageProvider.db.getFirstAsync<{ count: number }>(
+      const result = await SQLiteDBVaultStorageProvider.db.getFirstAsync<{ count: number }>(
         "SELECT COUNT(*) as count FROM journals",
       );
 
@@ -501,7 +501,7 @@ class SQLiteStorageProvider implements VaultStorageProvider {
    * (Run once on app startup for backward compatibility)
    */
   migrateFromAsyncStorage = async (dk: string): Promise<void> => {
-    const isMigrated = await this.getValue(SQLiteStorageProvider.KEYS.MIGRATION_COMPLETE_V1);
+    const isMigrated = await this.getValue(SQLiteDBVaultStorageProvider.KEYS.MIGRATION_COMPLETE_V1);
     if (isMigrated) {
       return;
     }
@@ -520,7 +520,7 @@ class SQLiteStorageProvider implements VaultStorageProvider {
       }
 
       // Mark migration as complete
-      await this.setValue(SQLiteStorageProvider.KEYS.MIGRATION_COMPLETE_V1, "true");
+      await this.setValue(SQLiteDBVaultStorageProvider.KEYS.MIGRATION_COMPLETE_V1, "true");
       console.log("Migration check complete");
     } catch (error) {
       console.error("Migration error:", error);
@@ -546,4 +546,4 @@ class SQLiteStorageProvider implements VaultStorageProvider {
   };
 }
 
-export default SQLiteStorageProvider ;
+export default SQLiteDBVaultStorageProvider ;
