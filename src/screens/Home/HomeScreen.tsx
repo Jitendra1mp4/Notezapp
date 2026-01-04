@@ -186,10 +186,15 @@ const HomeScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
                 ]}
                 onPress={() => navigation.navigate("JournalList")}
               >
-                <Text variant="displaySmall" style={styles.statValue}>
-                  {journals.length}
-                </Text>
-                <Text variant="labelMedium" style={[styles.statLabel, {paddingTop:10}]}>
+                <Animated.View style={{ transform: [{ scale: scaleAnim }] }}>
+                  <Text variant="displaySmall" style={styles.statValue}>
+                    {journals.length} 📝
+                  </Text>
+                </Animated.View>
+                <Text
+                  variant="labelMedium"
+                  style={[styles.statLabel, { paddingTop: 10 }]}
+                >
                   Total entries
                 </Text>
               </Pressable>
@@ -202,22 +207,20 @@ const HomeScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
               >
                 <Animated.View style={{ transform: [{ scale: scaleAnim }] }}>
                   <Text variant="displaySmall" style={styles.statValue}>
-                    {currentStreak}
+                    {currentStreak} 🔥
                   </Text>
                 </Animated.View>
-                <Text variant="labelMedium" style={styles.statLabel}>
-                  <View
-                    style={{
-                      flexDirection: "row",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      gap:1,
-                    }}
-                  >
-                    <IconButton icon="fire" size={25} style={{ margin: 0, marginBottom:5 }} />
-                    <Text variant="labelSmall">Current Streak</Text>
-                  </View>
-                </Text>
+                 
+                    {/* <IconButton
+                      icon="fire"
+                      size={25}
+                      style={{ margin: 0, marginBottom: 5 }}
+                    /> */}
+                    <Text
+                  variant="labelMedium"
+                  style={[styles.statLabel, { paddingTop: 10 }]}
+                > Current Streak</Text>
+                  {/* </View> */}
               </View>
             </View>
 
@@ -225,14 +228,19 @@ const HomeScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
               <Chip
                 icon="trophy"
                 compact
+                textStyle={{
+                  color: theme.colors.onSurface,
+                }}
                 style={[
                   styles.heroChip,
-                  { backgroundColor: theme.colors.elevation.level1 },
+                  {
+                    backgroundColor: theme.colors.elevation.level5,
+                  },
                 ]}
               >
                 {`Longest streak: ${longestStreak}`}
               </Chip>
-              {/* 
+              {/*               
               <Chip
                 icon="calendar-check-outline"
                 compact
@@ -339,59 +347,59 @@ const HomeScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
               </Button>
             </View>
 
-          <View style={styles.daysRow}>
-            {last3Days.map((d) => {
-              const active = d.count > 0;
-              const pillBg = active
-                ? theme.colors.primaryContainer
-                : theme.colors.elevation.level1;
-              const pillText = active
-                ? theme.colors.onPrimaryContainer
-                : theme.colors.onSurfaceVariant;
+            <View style={styles.daysRow}>
+              {last3Days.map((d) => {
+                const active = d.count > 0;
+                const pillBg = active
+                  ? theme.colors.primaryContainer
+                  : theme.colors.elevation.level1;
+                const pillText = active
+                  ? theme.colors.onPrimaryContainer
+                  : theme.colors.onSurfaceVariant;
 
-              // GET MOOD FOR THIS DAY - ADD THIS
-              const dayJournals = journals.filter(
+                // GET MOOD FOR THIS DAY - ADD THIS
+                const dayJournals = journals.filter(
                   (j) => format(new Date(j.date), "yyyy-MM-dd") === d.dateKey,
-              );
-              const dayMoods = dayJournals
-                .map((j) => j.mood)
-                .filter((m) => m)
+                );
+                const dayMoods = dayJournals
+                  .map((j) => j.mood)
+                  .filter((m) => m)
                   .map(
                     (m) => MOOD_OPTIONS.find((opt) => opt.value === m)?.emoji,
                   )
-                .filter((e) => e);
-              const moodDisplay = dayMoods.length > 0 ? dayMoods[0] : null;
+                  .filter((e) => e);
+                const moodDisplay = dayMoods.length > 0 ? dayMoods[0] : null;
 
-              return (
-                <Pressable
-                  key={d.dateKey}
-                  onPress={() =>
+                return (
+                  <Pressable
+                    key={d.dateKey}
+                    onPress={() =>
                       navigation.navigate("JournalList", {
                         selectedDate: d.dateKey,
                       })
-                  }
-                  style={[
-                    styles.dayPill,
-                    { backgroundColor: pillBg, borderColor: subtleBorder },
-                  ]}
-                >
-                  <Text style={[styles.dayPillTop, { color: pillText }]}>
+                    }
+                    style={[
+                      styles.dayPill,
+                      { backgroundColor: pillBg, borderColor: subtleBorder },
+                    ]}
+                  >
+                    <Text style={[styles.dayPillTop, { color: pillText }]}>
                       {d.isToday ? "Today" : d.dateLabel}
-                  </Text>
-                  <Text style={[styles.dayPillMid, { color: pillText }]}>
+                    </Text>
+                    <Text style={[styles.dayPillMid, { color: pillText }]}>
                       {active ? "✓" : "·"}
-                  </Text>
-                  {/* ADD MOOD DISPLAY */}
-                  {moodDisplay && (
-                    <Text style={styles.dayPillMood}>{moodDisplay}</Text>
-                  )}
-                  <Text style={[styles.dayPillBottom, { color: pillText }]}>
+                    </Text>
+                    {/* ADD MOOD DISPLAY */}
+                    {moodDisplay && (
+                      <Text style={styles.dayPillMood}>{moodDisplay}</Text>
+                    )}
+                    <Text style={[styles.dayPillBottom, { color: pillText }]}>
                       {d.count} {d.count === 1 ? "entry" : "entries"}
-                  </Text>
-                </Pressable>
-              );
-            })}
-          </View>
+                    </Text>
+                  </Pressable>
+                );
+              })}
+            </View>
           </Card.Content>
         </Card>
 
@@ -470,7 +478,7 @@ const HomeScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
 const styles = StyleSheet.create({
   container: { flex: 1 },
   content: { padding: 16 },
-dayPillMood: {
+  dayPillMood: {
     fontSize: 18,
     marginVertical: 2,
   },
