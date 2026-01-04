@@ -158,8 +158,8 @@ const SignupScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
         `Your account has been created successfully.\n\n` +
           `⚠️ IMPORTANT: Save this Recovery Key somewhere safe:\n\n` +
           `${recoveryKey}\n\n` +
-          `You will need this if you ever forget your password. ` +
-          `Write it down or take a screenshot.`,
+          `This can be used to recover your account if you ever forget your password. ` +
+          `Write it down and store it safely.`,
         [
           {
             text: "I have saved my Recovery Key",
@@ -169,7 +169,7 @@ const SignupScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
               );
               Alert.alert(
                 "Great!",
-                "Your journals are now protected with encryption. Start journaling!",
+                "🔒Now you have your protected secure vault that only you can access.\n🎉Start your journey..!",
               );
             },
           },
