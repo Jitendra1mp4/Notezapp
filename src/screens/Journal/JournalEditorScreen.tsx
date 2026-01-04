@@ -422,9 +422,9 @@ const JournalEditorScreen: React.FC<{ navigation: any; route: any }> = ({
 
          
           <View style={styles.titleRow}>
-          <TextInput
+            <TextInput
               placeholder="Title (tap to edit)"
-            value={title}
+              value={title}
               onChangeText={(text) => {
                 setTitle(text);
                 // Hide prompt indicator once user modifies the text
@@ -436,9 +436,9 @@ const JournalEditorScreen: React.FC<{ navigation: any; route: any }> = ({
                   // setShowPrompt(false);
                 }
               }}
-            mode="flat"
-            underlineColor="transparent"
-            activeUnderlineColor="transparent"
+              mode="flat"
+              underlineColor="transparent"
+              activeUnderlineColor="transparent"
               multiline={true} // ✅ ADD THIS
               // numberOfLines={3}                         // ✅ ADD THIS (shows up to 3 lines)
               textAlignVertical="center" // ✅ ADD THIS (align text to top)
@@ -449,9 +449,9 @@ const JournalEditorScreen: React.FC<{ navigation: any; route: any }> = ({
               cursorColor={theme.colors.primary}
               selectionColor={`${theme.colors.primary}55`}
               placeholderTextColor={theme.colors.onSurfaceVariant}
-            returnKeyType="next"
-            contentStyle={styles.titleContent}
-          />
+              returnKeyType="next"
+              contentStyle={styles.titleContent}
+            />
           </View>
           {/* Editor Area - Distraction Free */}
           {/* Editor / Preview Area */}
@@ -464,7 +464,7 @@ const JournalEditorScreen: React.FC<{ navigation: any; route: any }> = ({
                     : "### ✨ Quick Guide\n" +
                       "Start writing in **Edit** mode using these formats:\n\n" +
                       "• `Start with # for Big Header`\n" +
-                      "• `Start with ## for Medium Header`\n" +
+                      "• `Start with ## for Medium Header and so on...`\n" +
                       "• `Start with - for unordered List item`\n" +
                       "• `Surround like **Bold Text** for bold text`\n" +
                       "• `Surround like *Italic Text* for italic`\n" +
