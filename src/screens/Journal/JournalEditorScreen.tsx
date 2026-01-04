@@ -132,28 +132,30 @@ const JournalEditorScreen: React.FC<{ navigation: any; route: any }> = ({
   };
 
   // Initialize prompt for NEW entries only
-  useEffect(() => {
-    if (!journalId && !isAlreadyExist && title.length === 0) {
-      let prompt;
+  useFocusEffect(
+    useCallback(() => {
+      if (!journalId && !isAlreadyExist && title.length === 0) {
+        let prompt;
 
-      // Use prompt passed from home screen if available
-      if (promptFromHome && promptIdFromHome) {
-        prompt = {
-          id: promptIdFromHome,
-          text: promptFromHome,
-          category: "reflection" as const, // Default category
-        };
-      } else {
-        // Otherwise get a random prompt
-        prompt = getRandomPrompt();
+        // Use prompt passed from home screen if available
+        if (promptFromHome && promptIdFromHome) {
+          prompt = {
+            id: promptIdFromHome,
+            text: promptFromHome,
+            category: "reflection" as const, // Default category
+          };
+        } else {
+          // Otherwise get a random prompt
+          prompt = getRandomPrompt();
+        }
+
+        setCurrentPrompt(prompt);
+        setShowPrompt(true);
+        // Pre-fill title with prompt text so user can edit it
+        setTitle(prompt.text);
       }
-
-      setCurrentPrompt(prompt);
-      setShowPrompt(true);
-      // Pre-fill title with prompt text so user can edit it
-      setTitle(prompt.text);
-    }
-  }, [journalId, isAlreadyExist, promptFromHome, promptIdFromHome]);
+    }, [journalId, isAlreadyExist, promptFromHome, promptIdFromHome]),
+  );
 
   // This triggers by pressing back from any screen which I am not intended for.
   useFocusEffect(
@@ -176,21 +178,25 @@ const JournalEditorScreen: React.FC<{ navigation: any; route: any }> = ({
         onBackPress,
       );
       return () => subscription.remove();
-    }, [text, title, imageBase64List, encryptionKey, isJournalModified]),
+    }, [text, title, imageBase64List,selectedMood, encryptionKey, isJournalModified]),
   );
 
-  useEffect(() => {
-    if (isJournalCreated) {
-      loadJournal();
-    }
-  }, [journalId]);
+  useFocusEffect(
+    useCallback(() => {
+      if (isJournalCreated) {
+        loadJournal();
+      }
+    }, [journalId]),
+  );
 
-  useEffect(() => {
-    const callSaveAsync = async () => {
-      await handleSave(false);
-    };
-    callSaveAsync();
-  }, [encryptionKey, text, title, selectedMood, imageBase64List]);
+  useFocusEffect(
+    useCallback(() => {
+      const callSaveAsync = async () => {
+        await handleSave(false);
+      };
+      callSaveAsync();
+    }, [encryptionKey, text, title, selectedMood, imageBase64List]),
+  );
 
   const loadJournal = async () => {
     if (!encryptionKey) return;
@@ -230,6 +236,7 @@ const JournalEditorScreen: React.FC<{ navigation: any; route: any }> = ({
 
   // Find the handleSave function and update it with future date validation
   const handleSave = async (showAlert = false) => {
+
     if (isSaving) return false;
 
     if (!encryptionKey) {
@@ -393,18 +400,17 @@ const JournalEditorScreen: React.FC<{ navigation: any; route: any }> = ({
                 />
               </View>
 
-
-            {/* Shuffle button - only show for new entries with prompt */}
-            {showPrompt && currentPrompt && !journalId && (
-              <IconButton
-                icon="shuffle-variant"
-                size={20}
-                onPress={handleShufflePrompt}
-                iconColor={theme.colors.primary}
-                style={styles.toggleContainer}
-                animated
-              />
-            )}
+              {/* Shuffle button - only show for new entries with prompt */}
+              {showPrompt && currentPrompt && !journalId && (
+                <IconButton
+                  icon="shuffle-variant"
+                  size={20}
+                  onPress={handleShufflePrompt}
+                  iconColor={theme.colors.primary}
+                  style={styles.toggleContainer}
+                  animated
+                />
+              )}
               {/* <Button
                 mode="contained"
                 icon="check"
@@ -420,7 +426,6 @@ const JournalEditorScreen: React.FC<{ navigation: any; route: any }> = ({
             </View>
           </View>
 
-         
           <View style={styles.titleRow}>
             <TextInput
               placeholder="Title (tap to edit)"
@@ -646,10 +651,10 @@ const styles = StyleSheet.create({
 
   titleRow: {
     flexDirection: "row",
-    alignItems: "flex-start", 
+    alignItems: "flex-start",
     justifyContent: "space-between",
     gap: 8,
-    paddingBottom:0,
+    paddingBottom: 0,
   },
 
   promptIndicator: {
@@ -663,10 +668,11 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-     marginBottom: 5,
+    marginBottom: 5,
   },
   headerRight: {
-    padding:0,height:0,
+    padding: 0,
+    height: 0,
     flexDirection: "row",
     alignItems: "center",
   },
@@ -698,7 +704,7 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: "transparent",
     paddingHorizontal: 0,
-    paddingVertical:0,
+    paddingVertical: 0,
     marginLeft: -4,
   },
   titleContent: {
