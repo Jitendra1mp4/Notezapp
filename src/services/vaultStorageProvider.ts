@@ -12,7 +12,7 @@ import { Platform } from 'react-native';
 import { Journal } from '../types';
 import type { Vault } from '../types/crypto';
 import AsyncStoreVaultStorageProvider from './impl/asyncStoreVaultStorageProvider';
-import SQLiteStorageProvider from './impl/sqliteDatabaseStorageService';
+import SQLiteDBVaultStorageProvider from './impl/sqliteDBVaultStorageProvider';
 
 // Detect if we're on web or native
 const IS_WEB = Platform.OS === 'web';
@@ -53,7 +53,7 @@ export const getVaultStorageProvider = (): VaultStorageProvider => {
     return AsyncStoreVaultStorageProvider.getObject();
   } else {
     console.log('[Storage] Using SQLite backend for native');
-    return SQLiteStorageProvider.getObject();
+    return SQLiteDBVaultStorageProvider.getObject();
   }
 };
 
