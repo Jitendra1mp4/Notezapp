@@ -431,9 +431,10 @@ const SettingsScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
             <Text variant="titleMedium" style={{ marginBottom: 8 }}>
               {APP_CONFIG.displayName}
             </Text>
+            <Text style={styles.aboutText}>🔒</Text>            
             <Text style={styles.aboutText}>Secure. Private. Yours.</Text>
             <Text style={[styles.aboutText, { opacity: 0.7 }]}>
-              Your journals are end-to-end encrypted.
+               Your journals are encrypted and stored securely on your device.
             </Text>
           </View>
         </View>
