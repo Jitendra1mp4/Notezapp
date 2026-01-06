@@ -466,8 +466,8 @@ const JournalEditorScreen: React.FC<{ navigation: any; route: any }> = ({
                 <Markdown style={markdownStyles}>
                   {text.trim()
                     ? text
-                    : "### ✨ Quick Guide\n" +
-                      "Start writing in **Edit** mode using these formats:\n\n" +
+                    : "### ✨ Quick Guide for better formatting\n" +
+                      "you can use these formats:\n\n" +
                       "• `Start with # for Big Header`\n" +
                       "• `Start with ## for Medium Header and so on...`\n" +
                       "• `Start with - for unordered List item`\n" +
@@ -479,7 +479,7 @@ const JournalEditorScreen: React.FC<{ navigation: any; route: any }> = ({
             </View>
           ) : (
             <TextInput
-              placeholder="Start writing... (Markdown supported)"
+              placeholder="Start writing..."
               value={text}
               onChangeText={setText}
               mode="flat"
@@ -499,7 +499,7 @@ const JournalEditorScreen: React.FC<{ navigation: any; route: any }> = ({
           <MoodSelector
             selectedMood={selectedMood}
             onSelectMood={setSelectedMood}
-            label="How are you feeling?"
+            label="I am feeling:"
           />
 
           {/* Attachments Section */}
@@ -728,6 +728,7 @@ const styles = StyleSheet.create({
   // Preview
   previewContainer: {
     paddingVertical: 12,
+    opacity:0.7,
     flex: 1,
   },
 

@@ -8,6 +8,7 @@ import { KeyboardAvoidingView, Platform, StyleSheet, View } from "react-native";
 import {
   Button,
   Card,
+  Divider,
   Text,
   TextInput,
   useTheme
@@ -132,7 +133,11 @@ const LoginScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
       >
         <View style={styles.content}>
           <View style={styles.header}>
-            <Text variant="headlineMedium" style={styles.title}>
+            <Text variant="headlineMedium" 
+            style={[{
+                    color:theme.colors.primary},
+                    styles.title]}
+            >
               {APP_CONFIG.displayName}
             </Text>
             <Text
@@ -144,6 +149,14 @@ const LoginScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
             >
               {APP_CONFIG.APP_TAGLINE}
             </Text>
+          </View>
+          <View style={{
+              alignItems:'center',
+              marginBottom:100,             
+            }}>
+
+            <Divider style={[styles.divider, 
+              { borderColor: theme.colors.primary,}]} />
           </View>
 
           <Card
@@ -181,7 +194,7 @@ const LoginScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
                 {isLoading ? "Unlocking..." : "Unlock"}
               </Button>
 
-              {/* <Divider style={styles.divider} /> */}
+            
 
               <Button
                 mode="text"
@@ -194,7 +207,7 @@ const LoginScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
 
               {(isFirstTime || !vaultReady) && (
                 <Button
-                  mode="outlined"
+                  mode="elevated"
                   onPress={() => navigation.navigate("Signup")}
                   disabled={isLoading}
                   icon="account-plus-outline"
@@ -204,23 +217,19 @@ const LoginScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
                   First time? Let’s set it up
                 </Button>
               )}
-
-              {/* <Text
-                variant="bodySmall"
-                style={[
-                  styles.footer,
-                  { color: theme.colors.onSurfaceVariant },
-                ]}
-              >
-              Secure. Private. Yours.
-                Your journals are encrypted and stored on your device.
-              </Text> */}
-                <Text style={styles.aboutText}>Secure. Private. Yours.</Text>
-                          <Text style={[styles.aboutText, { opacity: 0.7 }]}>
-                            Your journals are end-to-end encrypted.
-                          </Text>
             </Card.Content>
           </Card>
+
+              <View style={{
+                marginTop:50,
+                
+              }}>
+                <Text style={[styles.aboutText,{color:theme.colors.secondary}]}>🔒</Text>
+                <Text style={[styles.aboutText,{color:theme.colors.secondary}]}>Secure. Private. Yours.</Text>
+                <Text style={[styles.aboutText, { opacity: 0.7, color:theme.colors.secondary }]}>
+                  Your journals are encrypted and stored securely on your device.
+                </Text>
+              </View>
         </View>
       </KeyboardAvoidingView>
     </SafeAreaView>
@@ -237,7 +246,7 @@ const styles = StyleSheet.create({
   },
   header: {
     alignItems: "center",
-    marginBottom: 16,
+    marginBottom: 6,
   },
   title: {
     textAlign: "center",
@@ -278,7 +287,10 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
   },
   divider: {
-    marginVertical: 14,
+   borderWidth:1,
+   borderRadius:10,   
+    width:200,
+    marginHorizontal:200
   },
   link: {
     alignSelf: "center",

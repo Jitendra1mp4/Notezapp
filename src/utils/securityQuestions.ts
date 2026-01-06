@@ -1,42 +1,42 @@
 export const PREDEFINED_SECURITY_QUESTIONS = [
   {
-    id: 'pet_name',
-    question: "What was the name of your first pet?",
+    id: 'childhood_best_friend',
+    question: "Name of my childhood best friend",
   },
   {
-    id: 'birth_city',
-    question: "In what city were you born?",
+    id: 'favorite_food_as_child',
+    question: "My favorite food as child",
   },
   {
-    id: 'mother_maiden',
-    question: "What is your mother's maiden name?",
-  },
-  {
-    id: 'childhood_friend',
-    question: "What was the name of your childhood best friend?",
-  },
-  {
-    id: 'first_school',
-    question: "What was the name of your first school?",
+    id: 'dream_profession_as_child',
+    question: "My dream profession as a child",
   },
   {
     id: 'favorite_teacher',
-    question: "What was the name of your favorite teacher?",
+    question: "Name of my favorite teacher",
   },
   {
-    id: 'first_car',
-    question: "What was the make of your first car?",
+    id: 'hated_teacher',
+    question: "Teacher that you don't like",
   },
   {
     id: 'favorite_book',
-    question: "What is your favorite book?",
+    question: "What is your favorite book",
   },
   {
-    id: 'dream_job',
-    question: "What was your dream job as a child?",
+    id: 'first_school',
+    question: "Name of my first school",
   },
   {
-    id: 'street_name',
-    question: "What street did you grow up on?",
+    id: 'mothers_birth_day',
+    question: "My mother birth day",
+  },
+  {
+    id: 'first_phone_name',
+    question: "Name of your first phone.",
+  },
+  {
+    id: 'birth_city',
+    question: "City were I born",
   },
 ];

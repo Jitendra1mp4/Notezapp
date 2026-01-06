@@ -34,8 +34,7 @@ import {
   setLongestStreak,
 } from "../../stores/slices/journalsSlice";
 
-const VaultStorageProvider = getVaultStorageProvider()
-
+const VaultStorageProvider = getVaultStorageProvider();
 
 const HomeScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
   const theme = useTheme();
@@ -79,7 +78,8 @@ const HomeScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
     if (!encryptionKey) return;
 
     try {
-      const loadedJournals = await  VaultStorageProvider.listJournals(encryptionKey);
+      const loadedJournals =
+        await VaultStorageProvider.listJournals(encryptionKey);
       dispatch(setJournals(loadedJournals));
 
       const longest = calculateLongestStreak(loadedJournals);
@@ -90,7 +90,7 @@ const HomeScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
   };
 
   const updateMarkedDates = () => {
-    const marked = getMarkedDates(journals,theme.colors);
+    const marked = getMarkedDates(journals, theme.colors);
     setMarkedDates(marked);
   };
 
@@ -104,7 +104,7 @@ const HomeScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
 
     if (selectedDate > today) {
       Alert.alert(
-        "Future Date Not Available 📅",
+        "Future Date Not Available",
         "Journals can only be created for today or past dates.\n\n" +
           "🚀 Coming Soon:\n" +
           "'Todo & Reminders' feature will allow you to plan ahead!\n\n" +
@@ -132,7 +132,7 @@ const HomeScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
 
   const last3Days = useMemo(() => {
     const days = [];
-    for (let i = 0; i < 3; i++) {
+    for (let i = 0; i < 5; i++) {
       const date = subDays(new Date(), i);
       const dateStr = format(date, "yyyy-MM-dd");
       const count = journals.filter(
@@ -186,13 +186,16 @@ const HomeScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
                 ]}
                 onPress={() => navigation.navigate("JournalList")}
               >
-                <Animated.View style={{ transform: [{ scale: scaleAnim }] ,  flexDirection:'row'}}>
+                <Animated.View
+                  style={{
+                    transform: [{ scale: scaleAnim }],
+                    flexDirection: "row",
+                  }}
+                >
                   <Text variant="displaySmall" style={styles.statValue}>
                     {journals.length}
                   </Text>
-                  <Text  style={styles.statEmojiValue}>
-                    📝
-                  </Text>
+                  <Text style={styles.statEmojiValue}>📝</Text>
                 </Animated.View>
                 <Text
                   variant="labelMedium"
@@ -208,25 +211,31 @@ const HomeScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
                   { backgroundColor: heroBg, borderColor: subtleBorder },
                 ]}
               >
-                <Animated.View style={{ transform: [{ scale: scaleAnim }], flexDirection:'row' }}>
+                <Animated.View
+                  style={{
+                    transform: [{ scale: scaleAnim }],
+                    flexDirection: "row",
+                  }}
+                >
                   <Text variant="displayMedium" style={styles.statValue}>
                     {currentStreak}
                   </Text>
-                  <Text style={styles.statEmojiValue}>
-                    🔥
-                  </Text>
+                  <Text style={styles.statEmojiValue}>🔥</Text>
                 </Animated.View>
-                 
-                    {/* <IconButton
+
+                {/* <IconButton
                       icon="fire"
                       size={25}
                       style={{ margin: 0, marginBottom: 5 }}
                     /> */}
-                    <Text
+                <Text
                   variant="labelMedium"
                   style={[styles.statLabel, { paddingTop: 10 }]}
-                > Current Streak</Text>
-                  {/* </View> */}
+                >
+                  {" "}
+                  Current Streak
+                </Text>
+                {/* </View> */}
               </View>
             </View>
 
@@ -262,95 +271,19 @@ const HomeScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
           </Card.Content>
         </Card>
 
-        <Card style={{ ...styles.card, borderColor: subtleBorder }}>
-          <Card.Content>
-            <View style={styles.promptPreviewContainer}>
-              {/* Header */}
-
-              {/* Prompt Text - Tappable */}
-              <Pressable
-                onPress={handleCreateJournalForToday}
-                style={{
-                  padding: 16,
-                  backgroundColor: heroBg,
-                  borderRadius: 12,
-                  borderColor: theme.colors.primary,
-                }}
-              >
-                <Text
-                  variant="titleMedium"
-                  style={{
-                    fontSize: 20,
-                    opacity: 0.8,
-                    color: theme.colors.onSurface,
-                    lineHeight: 24,
-                    fontWeight: "500",
-                  }}
-                >
-                  "{todayPrompt.text}"
-                </Text>
-              </Pressable>
-
-              {/* Actions */}
-              <View style={styles.promptActions}>
-                <View style={styles.promptHeader}>
-                  <IconButton
-                    icon="lightbulb-on-outline"
-                    size={15}
-                    iconColor={theme.colors.primary}
-                    style={{ margin: 0 }}
-                  />
-                  <Text
-                    variant="labelSmall"
-                    style={{
-                      fontWeight: "400",
-                      opacity: 0.7,
-                    }}
-                  >
-                    Today's Prompt
-                  </Text>
-                </View>
-                <Button
-                  mode="text"
-                  icon="shuffle-variant"
-                  onPress={() => setTodayPrompt(getRandomPrompt())}
-                  compact
-                >
-                  <Text
-                    style={{
-                      fontSize: 11,
-                      opacity: 0.9,
-                      fontStyle: "italic",
-                    }}
-                  >
-                    Shuffle{" "}
-                  </Text>
-                </Button>
-           
-                <Button
-                  icon="pencil-outline"
-                  onPress={handleCreateJournalForToday}
-                >
-                  Write it
-                </Button>
-              </View>
-            </View>
-          </Card.Content>
-        </Card>
-
-        {/* RECENT ACTIVITY */}
+          {/* RECENT ACTIVITY */}
         <Card style={[styles.card, { borderColor: subtleBorder }]}>
           <Card.Content>
             <View style={styles.sectionHeader}>
-              <Text variant="titleLarge" style={styles.sectionTitle}>
+              <Text variant="titleMedium" style={styles.sectionTitle}>
                 Recent activity
               </Text>
-              <Button
+              {/* <Button
                 mode="text"
                 onPress={() => navigation.navigate("JournalList")}
               >
                 View all
-              </Button>
+              </Button> */}
             </View>
 
             <View style={styles.daysRow}>
@@ -389,19 +322,24 @@ const HomeScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
                       { backgroundColor: pillBg, borderColor: subtleBorder },
                     ]}
                   >
+                    
                     <Text style={[styles.dayPillTop, { color: pillText }]}>
                       {d.isToday ? "Today" : d.dateLabel}
                     </Text>
+                    {/* <Text style={[styles.dayPillMid, { color: pillText }]}>
+                      {active ? "✓" : "·"}
+                    </Text> */}
+                    {/* ADD MOOD DISPLAY */}
+                    {
+                    moodDisplay ? (
+                      <Text style={styles.dayPillMood}>{moodDisplay}</Text>
+                    ): 
                     <Text style={[styles.dayPillMid, { color: pillText }]}>
                       {active ? "✓" : "·"}
-                    </Text>
-                    {/* ADD MOOD DISPLAY */}
-                    {moodDisplay && (
-                      <Text style={styles.dayPillMood}>{moodDisplay}</Text>
-                    )}
-                    <Text style={[styles.dayPillBottom, { color: pillText }]}>
+                    </Text>}
+                    {/* <Text style={[styles.dayPillBottom, { color: pillText }]}>
                       {d.count} {d.count === 1 ? "entry" : "entries"}
-                    </Text>
+                    </Text> */}
                   </Pressable>
                 );
               })}
@@ -409,11 +347,91 @@ const HomeScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
           </Card.Content>
         </Card>
 
+        <Card style={{ ...styles.card, borderColor: subtleBorder }}>
+          <Card.Content>
+            <View style={styles.promptPreviewContainer}>
+              {/* Header */}
+
+              {/* Prompt Text - Tappable */}
+              <Pressable
+                onPress={handleCreateJournalForToday}
+                style={{
+                  padding: 16,
+                  backgroundColor: heroBg,
+                  borderRadius: 12,
+                  borderColor: theme.colors.primary,
+                }}
+              >
+                <Text
+                  variant="titleMedium"
+                  style={{
+                    fontSize: 20,
+                    opacity: 0.8,
+                    color: theme.colors.onSurface,
+                    lineHeight: 24,
+                    fontWeight: "500",
+                  }}
+                >
+                  {todayPrompt.text}
+                </Text>
+              </Pressable>
+
+              {/* Actions */}
+              <View style={styles.promptActions}>
+                <View style={styles.promptHeader}>
+                  <IconButton
+                    icon="lightbulb-on-outline"
+                    size={15}
+                    iconColor={theme.colors.primary}
+                    style={{ margin: 0, marginRight: 0 }}
+                  />
+                  <Text
+                    variant="labelSmall"
+                    style={{
+                      marginLeft: -10,
+                      fontWeight: "400",
+                      opacity: 0.7,
+                    }}
+                  >
+                    Today's Prompt
+                  </Text>
+                </View>
+                <Button
+                  mode="text"
+                  icon="shuffle-variant"
+                  onPress={() => setTodayPrompt(getRandomPrompt())}
+                  compact
+                >
+                  <Text
+                    style={{
+                      fontSize: 11,
+                      marginLeft: 2,
+                      opacity: 0.9,
+                      fontStyle: "italic",
+                    }}
+                  >
+                    Shuffle
+                  </Text>
+                </Button>
+
+                <Button
+                  icon="pencil-outline"
+                  onPress={handleCreateJournalForToday}
+                >
+                  <Text style={{ fontSize: 13 }}>Write...</Text>
+                </Button>
+              </View>
+            </View>
+          </Card.Content>
+        </Card>
+
+      
+
         {/* CALENDAR */}
         <Card style={[styles.card, { borderColor: subtleBorder }]}>
           <Card.Content>
-            <Text variant="titleLarge" style={styles.sectionTitleCentered}>
-              Calendar
+            <Text variant="labelLarge" style={styles.sectionTitleCentered}>
+            Your memory calender...
             </Text>
             <Calendar
               key={theme.dark ? "cal-dark" : "cal-light"}
@@ -421,7 +439,7 @@ const HomeScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
               markedDates={markedDates}
               markingType="dot"
               onDayPress={handleDayPress}
-              // maxDate={format(new Date(), "yyyy-MM-dd")}
+              maxDate={format(new Date(), "yyyy-MM-dd")}
               disabledByDefault={false}
             />
           </Card.Content>
@@ -531,13 +549,13 @@ const styles = StyleSheet.create({
     textAlign: "center", // add
   },
   statValue: {
-    fontSize:35,
+    fontSize: 35,
     fontWeight: "800",
     textAlign: "center", // add
   },
   statEmojiValue: {
-    // marginTop:6, 
-    fontSize:20, // add
+    // marginTop:6,
+    fontSize: 20, // add
   },
 
   heroChipsRow: {
@@ -571,14 +589,15 @@ const styles = StyleSheet.create({
   },
   dayPill: {
     flex: 1,
-    borderRadius: 14,
+    borderRadius: 8,
     borderWidth: 1,
-    paddingVertical: 12,
-    paddingHorizontal: 10,
+    paddingVertical: 5,
+    paddingHorizontal: 3,
+    justifyContent:'center',
     alignItems: "center",
   },
-  dayPillTop: { fontSize: 12, fontWeight: "700", opacity: 0.9 },
-  dayPillMid: { fontSize: 22, fontWeight: "900", marginVertical: 4 },
+  dayPillTop: { fontSize: 11, fontWeight: "400", opacity: 0.9 },
+  dayPillMid: { fontSize: 12, fontWeight: "400", marginVertical: 4 },
   dayPillBottom: { fontSize: 12, opacity: 0.85 },
 
   actionsRow: {

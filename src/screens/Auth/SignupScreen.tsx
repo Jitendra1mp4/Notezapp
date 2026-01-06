@@ -10,6 +10,7 @@ import {
   Button,
   Card,
   Chip,
+  Divider,
   HelperText,
   Text,
   TextInput,
@@ -54,7 +55,7 @@ const SignupScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
     const askPermission = async () => {
       // Request Notification Permissions
       const granted = await requestNotificationPermissions();
-      if (!granted ) {
+      if (!granted) {
         Alert.alert(
           "Permission Required",
           "Please enable notifications in your device settings.",
@@ -62,7 +63,7 @@ const SignupScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
       }
     };
     if (Platform.OS !== 'web') askPermission();
-  },[]);
+  }, []);
 
   useFocusEffect(
     useCallback(() => {
@@ -143,46 +144,47 @@ const SignupScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
         qaPairs,
       );
 
-      await  VaultStorageProvider.saveVault(vault);
+      await VaultStorageProvider.saveVault(vault);
 
       // 4. Save recovery key hash (for verification purposes)
       // Note: Full recovery key is shown once to user
-      await  VaultStorageProvider.saveRecoveryKeyHash(recoveryKey);
+      await VaultStorageProvider.saveRecoveryKeyHash(recoveryKey);
 
       // 5. Mark app as launched
-      await  VaultStorageProvider.markAsLaunched();
+      await VaultStorageProvider.markAsLaunched();
 
-      // 6. Update Redux state
-      dispatch(setAuthenticated(true));
-
-      // 7. Store the DK in context (user is now logged in with this key)
-      // Decrypt DK using password for immediate access
-      // const { dk } = await CryptoManager.unlockWithPassword(vault, password);
-      dispatch(setEncryptionKey(dk));
-
-      // 8. Show recovery key to user and ask them to save it
+      // 6. Show recovery key to user and ask them to save it
       Alert.alert(
         "Account Created!",
         `Your account has been created successfully.\n\n` +
-          `⚠️ IMPORTANT: Save this Recovery Key somewhere safe:\n\n` +
-          `${recoveryKey}\n\n` +
-          `You will need this if you ever forget your password. ` +
-          `Write it down or take a screenshot.`,
+        `⚠️ IMPORTANT: Save this Recovery Key somewhere safe:\n\n` +
+        `${recoveryKey}\n\n` +
+        `This can be used to recover your account if you ever forget your password. ` +
+        `Write it down and store it safely.`,
         [
           {
             text: "I have saved my Recovery Key",
             onPress: () => {
-               VaultStorageProvider.clearRecoveryKeyDisplay().catch((err: any) =>
+              VaultStorageProvider.clearRecoveryKeyDisplay().catch((err: any) =>
                 console.error("Error clearing recovery key:", err),
               );
               Alert.alert(
                 "Great!",
-                "Your journals are now protected with encryption. Start journaling!",
+                "🔒Now you have your protected secure vault that only you can access.\n🎉Start your journey..!",
               );
+              // 7. Update Redux state
+              dispatch(setAuthenticated(true));
+
+              // 8. Store the DK in context (user is now logged in with this key)
+              // Decrypt DK using password for immediate access
+              // const { dk } = await CryptoManager.unlockWithPassword(vault, password);
+              dispatch(setEncryptionKey(dk));
             },
           },
         ],
       );
+
+
     } catch (error) {
       console.error("Signup error:", error);
       Alert.alert(
@@ -214,9 +216,14 @@ const SignupScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
         >
           {/* Header */}
           <View style={styles.header}>
-            <Text
-              variant="displaySmall"
-              style={[styles.appTitle, { color: theme.colors.onBackground }]}
+            <Text variant="headlineMedium"
+              style={[{
+                color: theme.colors.primary
+              },
+              {
+                textAlign: "center",
+                fontWeight: "700",
+              }]}
             >
               {APP_CONFIG.displayName}
             </Text>
@@ -227,209 +234,250 @@ const SignupScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
                 { color: theme.colors.onSurfaceVariant },
               ]}
             >
-              Create a secure vault for your journals.
+              {APP_CONFIG.APP_TAGLINE}
             </Text>
           </View>
+          <View style={{
+            alignItems: 'center',
+            marginBottom: 100,
+          }}>
 
-          {/* Password section */}
-          <Card
-            style={[styles.card, { backgroundColor: theme.colors.surface }]}
-            mode="elevated"
-          >
-            <Card.Content>
-              <Text variant="titleLarge" style={styles.sectionTitle}>
-                Create password
-              </Text>
+            <Divider style={[styles.divider,
+            { borderColor: theme.colors.primary, }]} />
+          </View>
 
-              <TextInput
-                label="Password"
-                value={password}
-                onChangeText={setPassword}
-                secureTextEntry={!showPassword}
-                mode="outlined"
-                disabled={controlDisabled}
-                style={styles.input}
-                left={
-                  <TextInput.Icon
-                    icon="lock-outline"
-                    disabled={controlDisabled}
-                  />
-                }
-                right={
-                  <TextInput.Icon
-                    icon={showPassword ? "eye-off" : "eye"}
-                    onPress={() => setShowPassword(!showPassword)}
-                    disabled={controlDisabled}
-                  />
-                }
-              />
-              <HelperText type="info" visible={password.length > 0}>
-                {isPasswordValid
-                  ? "Password looks good."
-                  : "Use at least 8 characters."}
-              </HelperText>
 
-              <TextInput
-                label="Confirm password"
-                value={confirmPassword}
-                onChangeText={setConfirmPassword}
-                secureTextEntry={!showConfirmPassword}
-                mode="outlined"
-                disabled={controlDisabled}
-                style={styles.input}
-                left={
-                  <TextInput.Icon
-                    icon="lock-check-outline"
-                    disabled={controlDisabled}
-                  />
-                }
-                right={
-                  <TextInput.Icon
-                    icon={showConfirmPassword ? "eye-off" : "eye"}
-                    onPress={() => setShowConfirmPassword(!showConfirmPassword)}
-                    disabled={controlDisabled}
-                  />
-                }
-              />
-              <HelperText
-                type={passwordsMatch ? "info" : "error"}
-                visible={confirmPassword.length > 0}
-              >
-                {passwordsMatch
-                  ? "Passwords match."
-                  : "Passwords do not match."}
-              </HelperText>
-            </Card.Content>
-          </Card>
-
-          {/* Security Questions */}
-          <Card
-            style={[styles.card, { backgroundColor: theme.colors.surface }]}
-            mode="elevated"
-          >
-            <Card.Content>
-              <View style={styles.sectionHeaderRow}>
-                <Text variant="titleLarge" style={styles.sectionTitle}>
-                  Security questions
-                </Text>
-                <Chip compact icon="shield-key-outline">
-                  {selectedQuestions.length}/3
-                </Chip>
-              </View>
-
-              <Text
-                variant="bodySmall"
-                style={[
-                  styles.sectionHint,
-                  { color: theme.colors.onSurfaceVariant },
-                ]}
-              >
-                Select 3 questions to recover your account if you forget your
-                password.
-              </Text>
-
-              <View style={styles.questionsWrap}>
-                {PREDEFINED_SECURITY_QUESTIONS.map((q) => {
-                  const selected = selectedQuestions.includes(q.id);
-                  return (
-                    <Chip
-                      key={q.id}
-                      selected={selected}
-                      onPress={() => toggleQuestionSelection(q.id)}
-                      disabled={controlDisabled}
-                      style={[
-                        styles.questionChip,
-                        {
-                          backgroundColor: selected
-                            ? theme.colors.primaryContainer
-                            : theme.colors.surfaceVariant,
-                          borderColor: theme.colors.outlineVariant,
-                        },
-                      ]}
-                      textStyle={{
-                        color: selected
-                          ? theme.colors.onPrimaryContainer
-                          : theme.colors.onSurfaceVariant,
-                      }}
-                      mode="outlined"
-                    >
-                      {q.question}
-                    </Chip>
-                  );
-                })}
-              </View>
-            </Card.Content>
-          </Card>
-
-          {/* Answers */}
-          {selectedQuestions.length > 0 && (
+          <View style={{
+            borderRadius: 16,
+            width: "100%",
+            maxWidth: 440,
+            marginBottom:200,
+            alignSelf: "center",
+          }}>
+            {/* Password section */}
             <Card
               style={[styles.card, { backgroundColor: theme.colors.surface }]}
               mode="elevated"
             >
-              <Card.Content>
+              <Card.Content style={styles.cardContent}>
                 <Text variant="titleLarge" style={styles.sectionTitle}>
-                  Your answers
+                  Create password
                 </Text>
-                <Text
+
+               <Text
                   variant="bodySmall"
                   style={[
                     styles.sectionHint,
                     { color: theme.colors.onSurfaceVariant },
                   ]}
-                >
-                  Answers are used only for recovery. Keep them memorable.
+                >You have to create a password it will be used to access access the app.
                 </Text>
 
-                {selectedQuestions.map((qId) => {
-                  const question = PREDEFINED_SECURITY_QUESTIONS.find(
-                    (q) => q.id === qId,
-                  );
-                  return (
-                    <View key={qId} style={styles.answerBlock}>
-                      <Text
-                        variant="labelLarge"
-                        style={{ color: theme.colors.onSurface }}
-                      >
-                        {question?.question}
-                      </Text>
-                      <TextInput
-                        value={answers[qId] ?? ""}
-                        onChangeText={(text) =>
-                          setAnswers({ ...answers, [qId]: text })
-                        }
-                        mode="outlined"
-                        placeholder="Your answer"
-                        disabled={controlDisabled}
-                        style={styles.input}
-                      />
-                    </View>
-                  );
-                })}
+                <TextInput
+                  label="Password"
+                  value={password}
+                  onChangeText={setPassword}
+                  secureTextEntry={!showPassword}
+                  mode="outlined"
+                  disabled={controlDisabled}
+                  style={styles.input}
+                  left={
+                    <TextInput.Icon
+                      icon="lock-outline"
+                      disabled={controlDisabled}
+                    />
+                  }
+                  right={
+                    <TextInput.Icon
+                      icon={showPassword ? "eye-off" : "eye"}
+                      onPress={() => setShowPassword(!showPassword)}
+                      disabled={controlDisabled}
+                    />
+                  }
+                />
+                <HelperText type="info" visible={password.length > 0}>
+                  {isPasswordValid
+                    ? "Password looks good."
+                    : "Use at least 8 characters."}
+                </HelperText>
+
+                <TextInput
+                  label="Confirm password"
+                  value={confirmPassword}
+                  onChangeText={setConfirmPassword}
+                  secureTextEntry={!showConfirmPassword}
+                  mode="outlined"
+                  disabled={controlDisabled}
+                  style={styles.input}
+                  left={
+                    <TextInput.Icon
+                      icon="lock-check-outline"
+                      disabled={controlDisabled}
+                    />
+                  }
+                  right={
+                    <TextInput.Icon
+                      icon={showConfirmPassword ? "eye-off" : "eye"}
+                      onPress={() => setShowConfirmPassword(!showConfirmPassword)}
+                      disabled={controlDisabled}
+                    />
+                  }
+                />
+                <HelperText
+                  type={passwordsMatch ? "info" : "error"}
+                  visible={confirmPassword.length > 0}
+                >
+                  {passwordsMatch
+                    ? "Passwords match."
+                    : "Passwords do not match."}
+                </HelperText>
               </Card.Content>
             </Card>
-          )}
 
-          {/* CTA */}
-          <Button
-            mode="contained"
-            onPress={handleSignup}
-            disabled={!canSubmit || controlDisabled}
-            loading={isLoading}
-            style={styles.cta}
-            contentStyle={styles.ctaContent}
-          >
-            {isLoading ? "Creating secure vault..." : "Create account"}
-          </Button>
+            {/* Security Questions */}
+            <Card
+              style={[styles.card, { backgroundColor: theme.colors.surface }]}
+              mode="elevated"
+            >
+              <Card.Content style={styles.cardContent}>
+                <View style={styles.sectionHeaderRow}>
+                  <Text variant="titleLarge" style={styles.sectionTitle}>
+                    Security questions
+                  </Text>
+                </View>
 
-          <Button
-            mode="text"
-            onPress={() => navigation.navigate("Login")}
-            disabled={controlDisabled}
-            style={styles.link}
-          >
-            Already set up? Login
-          </Button>
+                <Text
+                  variant="bodySmall"
+                  style={[
+                    styles.sectionHint,
+                    {marginTop:10, color: theme.colors.onSurfaceVariant },
+                  ]}
+                >
+                  Select 3 questions to recover your account if you forget your
+                  password.
+                </Text>
+                  <Chip
+                 
+                   compact icon="shield-key-outline">
+                    {selectedQuestions.length}/3
+                  </Chip>
+
+                <View style={styles.questionsWrap}>
+                  {PREDEFINED_SECURITY_QUESTIONS.map((q) => {
+                    const selected = selectedQuestions.includes(q.id);
+                    return (
+                      <Chip
+                        key={q.id}
+                        selected={selected}
+                        onPress={() => toggleQuestionSelection(q.id)}
+                        disabled={controlDisabled}
+                        style={[
+                          styles.questionChip,
+                          {
+                            backgroundColor: selected
+                              ? theme.colors.primaryContainer
+                              : theme.colors.surface,
+                              borderWidth:0,
+                              borderLeftWidth:2,
+                            borderLeftColor: theme.colors.primary,
+                          },
+                        ]}
+                        textStyle={{
+                          color: selected
+                            ? theme.colors.onPrimaryContainer
+                            : theme.colors.onSurfaceVariant,
+                        }}
+                        mode="outlined"
+                      >
+                        {q.question}
+                      </Chip>
+                    );
+                  })}
+                </View>
+              </Card.Content>
+            </Card>
+
+            {/* Answers */}
+            {selectedQuestions.length > 0 && (
+              <Card
+                style={[styles.card, { backgroundColor: theme.colors.surface }]}
+                mode="elevated"
+              >
+                <Card.Content style={styles.cardContent}>
+                  <Text variant="titleLarge" style={styles.sectionTitle}>
+                    Your answers
+                  </Text>
+                  <Text
+                    variant="bodySmall"
+                    style={[
+                      styles.sectionHint,
+                      { color: theme.colors.onSurfaceVariant },
+                    ]}
+                  >
+                    Answers are used only for recovery. Keep them memorable.
+                  </Text>
+
+                  {selectedQuestions.map((qId) => {
+                    const question = PREDEFINED_SECURITY_QUESTIONS.find(
+                      (q) => q.id === qId,
+                    );
+                    return (
+                      <View key={qId} style={styles.answerBlock}>
+                        <Text
+                          variant="labelLarge"
+                          style={{ color: theme.colors.onSurface }}
+                        >
+                          {question?.question}
+                        </Text>
+                        <TextInput
+                          value={answers[qId] ?? ""}
+                          onChangeText={(text) =>
+                            setAnswers({ ...answers, [qId]: text })
+                          }
+                          mode="outlined"
+                          placeholder="Your answer"
+                          disabled={controlDisabled}
+                          style={styles.input}
+                        />
+                      </View>
+                    );
+                  })}
+                </Card.Content>
+              </Card>
+            )}
+
+            {/* CTA */}
+            <Button
+              mode="contained"
+              onPress={handleSignup}
+              disabled={!canSubmit || controlDisabled}
+              loading={isLoading}
+              style={styles.cta}
+              contentStyle={styles.ctaContent}
+            >
+              {isLoading ? "Creating secure vault..." : "Create account"}
+            </Button>
+
+            <Button
+              mode="text"
+              onPress={() => navigation.navigate("Login")}
+              disabled={controlDisabled}
+              style={styles.link}
+            >
+              Already set up? Login
+            </Button>
+
+          </View>
+
+             <View style={{
+              marginTop:50,              
+            }}>
+              <Text style={[styles.aboutText,{color:theme.colors.secondary}]}>🔒</Text>
+              <Text style={[styles.aboutText,{color:theme.colors.secondary}]}>Secure. Private. Yours.</Text>
+              <Text style={[styles.aboutText, { opacity: 0.7, color:theme.colors.secondary }]}>
+                Your journals are encrypted and stored securely on your device.
+              </Text>
+            </View>
         </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>
@@ -440,10 +488,24 @@ const styles = StyleSheet.create({
   flex: { flex: 1 },
   container: { flex: 1 },
   content: { padding: 16, paddingBottom: 28, gap: 12 },
-  header: { paddingTop:150,marginTop: 8, marginBottom: 8, alignItems: "center" },
+  header: {
+    textAlign:'center',
+    paddingTop: 150,
+    marginTop: 8,
+    marginBottom: 8,
+    alignItems:'center',
+    justifyContent: "center",
+  },
+
   appTitle: { textAlign: "center" },
-  subtitle: { textAlign: "center", marginTop: 6 },
-  card: { borderRadius: 16, paddingVertical: 10 },
+  subtitle: { textAlign: "center", marginTop: 6, maxWidth:300, },
+  card: {
+    borderRadius: 16,
+    paddingVertical: 10,
+    marginVertical: 10,
+    width: "100%",
+    alignSelf: "center",
+  },
   sectionHeaderRow: {
     flexDirection: "row",
     justifyContent: "space-between",
@@ -452,12 +514,31 @@ const styles = StyleSheet.create({
   sectionTitle: { marginBottom: 8, fontWeight: "700" },
   sectionHint: { marginBottom: 12 },
   input: { marginBottom: 8 },
-  questionsWrap: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
-  questionChip: { borderWidth: 1 },
-  answerBlock: { marginTop: 10 },
-  cta: { marginTop: 6, borderRadius: 14 },
-  ctaContent: { paddingVertical: 8 },
-  link: { marginTop: 6 },
+  questionsWrap: { flexDirection: "column", 
+     marginTop: 20, flexWrap: "wrap", gap: 8 },
+  questionChip: { width:'100%' , borderRadius:0, borderTopRightRadius:10, borderBottomRightRadius:10,  flex:1,},
+  answerBlock: { marginTop: 10, },
+  cta: { marginTop: 10, borderRadius: 14 },
+  ctaContent: { 
+    paddingVertical: 8
+   },
+  link: { 
+    marginTop:30,
+  },
+  cardContent: {
+    paddingVertical: 40,
+    paddingHorizontal: 35,
+  },
+  divider: {
+    borderWidth: 1,
+    borderRadius: 10,
+    width: 200,
+    marginHorizontal: 200
+  },
+   aboutText: {
+    textAlign: "center",
+    marginBottom: 4,
+  },
 });
 
 export default SignupScreen;
