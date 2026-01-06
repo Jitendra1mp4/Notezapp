@@ -3,6 +3,14 @@ import { StatusBar } from 'expo-status-bar';
 import React, { useEffect, useRef, useState } from 'react';
 import { AppState, AppStateStatus, Platform, View } from 'react-native';
 
+import {
+  SourceSerif4_400Regular,
+  SourceSerif4_500Medium,
+  SourceSerif4_600SemiBold,
+  SourceSerif4_700Bold,
+} from '@expo-google-fonts/source-serif-4';
+import { useFonts } from 'expo-font';
+
 
 // ✅ SAFE POLYFILL STRATEGY
 if (Platform.OS !== 'web') {
@@ -132,16 +140,23 @@ function AppContent() {
     dispatch
   ]);
 
+// inside AppContent()
+const [fontsLoaded] = useFonts({
+  SourceSerif4_400Regular,
+  SourceSerif4_500Medium,
+  SourceSerif4_600SemiBold,
+  SourceSerif4_700Bold,
+});
 
-    if (!storageReady) {
-    return (
-      <SafeAreaProvider>
-        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-          <Text>Initializing secure storage...</Text>
-        </View>
-      </SafeAreaProvider>
-    );
-  }
+if (!storageReady || !fontsLoaded) {
+  return (
+    <SafeAreaProvider>
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+        <Text>Initializing secure storage...</Text>
+      </View>
+    </SafeAreaProvider>
+  );
+}
 
 
   return (

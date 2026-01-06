@@ -12,6 +12,7 @@ export const getMarkdownStyles = (theme: MD3Theme) => ({
   // Body text
   body: {
     color: theme.colors.onBackground,
+    fontFamily: 'SourceSerif4_400Regular',
     fontSize: 16,
     lineHeight: 24,
   },
@@ -19,6 +20,7 @@ export const getMarkdownStyles = (theme: MD3Theme) => ({
   // Headings
   heading1: {
     color: theme.colors.primary,
+    fontFamily: 'SourceSerif4_600SemiBold',
     fontSize: 28,
     fontWeight: 'bold' as const,
     marginTop: 20,
@@ -27,6 +29,7 @@ export const getMarkdownStyles = (theme: MD3Theme) => ({
   },
   heading2: {
     color: theme.colors.primary,
+    fontFamily: 'SourceSerif4_600SemiBold',
     fontSize: 24,
     fontWeight: 'bold' as const,
     marginTop: 18,
@@ -35,6 +38,7 @@ export const getMarkdownStyles = (theme: MD3Theme) => ({
   },
   heading3: {
     color: theme.colors.onBackground,
+    fontFamily: 'SourceSerif4_400Regular',
     fontSize: 20,
     fontWeight: '600' as const,
     marginTop: 16,
@@ -43,6 +47,7 @@ export const getMarkdownStyles = (theme: MD3Theme) => ({
   },
   heading4: {
     color: theme.colors.onBackground,
+    fontFamily: 'SourceSerif4_600SemiBold',
     fontSize: 18,
     fontWeight: '600' as const,
     marginTop: 14,
@@ -51,6 +56,7 @@ export const getMarkdownStyles = (theme: MD3Theme) => ({
   },
   heading5: {
     color: theme.colors.onBackground,
+    fontFamily: 'SourceSerif4_600SemiBold',
     fontSize: 16,
     fontWeight: '600' as const,
     marginTop: 12,
@@ -58,6 +64,7 @@ export const getMarkdownStyles = (theme: MD3Theme) => ({
   },
   heading6: {
     color: theme.colors.onBackground,
+    fontFamily: 'SourceSerif4_600SemiBold',
     fontSize: 14,
     fontWeight: '600' as const,
     marginTop: 10,
@@ -84,12 +91,14 @@ export const getMarkdownStyles = (theme: MD3Theme) => ({
   },
   bullet_list_icon: {
     color: theme.colors.primary,
+    fontFamily: 'SourceSerif4_400Regular',
     fontSize: 16,
     marginLeft: 0,
     marginRight: 8,
   },
   ordered_list_icon: {
     color: theme.colors.primary,
+    fontFamily: 'SourceSerif4_400Regular',
     fontSize: 16,
     marginLeft: 0,
     marginRight: 8,
