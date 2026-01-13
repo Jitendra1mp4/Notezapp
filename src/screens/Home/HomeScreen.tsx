@@ -1,9 +1,12 @@
 // src/screens/Home/HomeScreen.tsx
+import { WeeklyReviewStory } from "@/src/components/home/WeeklyReviewStory";
 import { MOOD_OPTIONS } from "@/src/components/journal/MoodSelector";
 import { getVaultStorageProvider } from "@/src/services/vaultStorageProvider";
+import { buildWeeklyReviewSummary } from "@/src/services/weeklyReviewService";
 import { Alert } from "@/src/utils/alert";
 import { getRandomPrompt } from "@/src/utils/journalPrompts";
 import { getCalendarTheme } from "@/src/utils/theme";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useFocusEffect } from "@react-navigation/native";
 import { format, subDays } from "date-fns";
 import React, { useEffect, useMemo, useState } from "react";
@@ -73,6 +76,40 @@ const HomeScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
       Animated.spring(scaleAnim, { toValue: 1, useNativeDriver: true }),
     ]).start();
   }, [currentStreak, scaleAnim]);
+
+  const weekly = useMemo(() => buildWeeklyReviewSummary(journals), [journals]);
+  const [isWeeklyNew, setIsWeeklyNew] = useState(false);
+
+  // useFocusEffect(
+  React.useEffect(() => {
+    let mounted = true;
+
+    const key = `weeklyReview:lastShown:${weekly.weekStart}`;
+
+    const run = async () => {
+      try {
+        // TODO: fix it to use storage provider./ not very important
+        const seen = await AsyncStorage.getItem(key);
+        if (!mounted) return;
+        setIsWeeklyNew(!seen);
+
+        // Auto-open once per week (status-like on login), only if there is something to celebrate
+        if (!seen && weekly.entryCount > 0) {
+          setTimeout(() => {
+            navigation.navigate("WeeklyReview");
+          }, 700);
+        }
+      } catch {
+        // non-blocking
+      }
+    };
+
+    run();
+    return () => {
+      mounted = false;
+    };
+  }, [navigation, weekly.weekStart, weekly.entryCount]);
+  // );
 
   const loadJournals = async () => {
     if (!encryptionKey) return;
@@ -162,6 +199,21 @@ const HomeScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
       <ScrollView
         contentContainerStyle={[styles.content, { paddingBottom: 96 }]}
       >
+        <View style={{ marginBottom: 4 }}>
+          <WeeklyReviewStory
+            summary={weekly}
+            isNew={isWeeklyNew}
+            onPress={async () => {
+              try {
+                const key = `weeklyReview:lastShown:${weekly.weekStart}`;
+                await AsyncStorage.setItem(key, "1");
+                setIsWeeklyNew(false);
+              } catch {}
+              navigation.navigate("WeeklyReview");
+            }}
+          />
+        </View>
+
         {/* HERO / OVERVIEW */}
         <Card style={[styles.heroCard, { borderColor: subtleBorder }]}>
           <Card.Content>
@@ -271,7 +323,7 @@ const HomeScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
           </Card.Content>
         </Card>
 
-          {/* RECENT ACTIVITY */}
+        {/* RECENT ACTIVITY */}
         <Card style={[styles.card, { borderColor: subtleBorder }]}>
           <Card.Content>
             <View style={styles.sectionHeader}>
@@ -322,7 +374,6 @@ const HomeScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
                       { backgroundColor: pillBg, borderColor: subtleBorder },
                     ]}
                   >
-                    
                     <Text style={[styles.dayPillTop, { color: pillText }]}>
                       {d.isToday ? "Today" : d.dateLabel}
                     </Text>
@@ -330,13 +381,13 @@ const HomeScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
                       {active ? "✓" : "·"}
                     </Text> */}
                     {/* ADD MOOD DISPLAY */}
-                    {
-                    moodDisplay ? (
+                    {moodDisplay ? (
                       <Text style={styles.dayPillMood}>{moodDisplay}</Text>
-                    ): 
-                    <Text style={[styles.dayPillMid, { color: pillText }]}>
-                      {active ? "✓" : "·"}
-                    </Text>}
+                    ) : (
+                      <Text style={[styles.dayPillMid, { color: pillText }]}>
+                        {active ? "✓" : "·"}
+                      </Text>
+                    )}
                     {/* <Text style={[styles.dayPillBottom, { color: pillText }]}>
                       {d.count} {d.count === 1 ? "entry" : "entries"}
                     </Text> */}
@@ -347,12 +398,15 @@ const HomeScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
           </Card.Content>
         </Card>
 
-        <Card style={{ ...styles.card, borderColor: subtleBorder }}>
+        <Card
+          style={{
+            ...styles.card,
+            borderColor: subtleBorder,
+              backgroundColor: theme.colors.primaryContainer,
+          }}
+        >
           <Card.Content>
             <View style={styles.promptPreviewContainer}>
-              {/* Header */}
-
-              {/* Prompt Text - Tappable */}
               <Pressable
                 onPress={handleCreateJournalForToday}
                 style={{
@@ -425,13 +479,11 @@ const HomeScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
           </Card.Content>
         </Card>
 
-      
-
         {/* CALENDAR */}
         <Card style={[styles.card, { borderColor: subtleBorder }]}>
           <Card.Content>
             <Text variant="labelLarge" style={styles.sectionTitleCentered}>
-            Your memory calender...
+              Your memory calender...
             </Text>
             <Calendar
               key={theme.dark ? "cal-dark" : "cal-light"}
@@ -593,7 +645,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     paddingVertical: 5,
     paddingHorizontal: 3,
-    justifyContent:'center',
+    justifyContent: "center",
     alignItems: "center",
   },
   dayPillTop: { fontSize: 11, fontWeight: "400", opacity: 0.9 },

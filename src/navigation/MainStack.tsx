@@ -12,6 +12,7 @@ import JournalDetailScreen from "../screens/Journal/JournalDetailScreen";
 import JournalEditorScreen from "../screens/Journal/JournalEditorScreen";
 import JournalListScreen from "../screens/Journal/JournalListScreen";
 import SettingsScreen from "../screens/Settings/SettingsScreen";
+import WeeklyReviewScreen from "../screens/WeeklyReview/WeeklyReviewScreen";
 import { useAppDispatch } from "../stores/hooks";
 import { logout } from "../stores/slices/authSlice";
 
@@ -64,6 +65,13 @@ export const MainStack: React.FC = () => {
           getHeaderOptions(navigation, APP_CONFIG.displayName)
         }
       />
+
+      <Stack.Screen
+        name="WeeklyReview"
+        component={WeeklyReviewScreen}
+        options={(navigation) => getHeaderOptions(navigation, 'Weekly Review')}
+      />
+
       <Stack.Screen
         name="JournalList"
         component={JournalListScreen}
